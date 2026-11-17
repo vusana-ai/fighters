@@ -32,10 +32,28 @@
       50% { box-shadow: 0 0 15px rgba(232, 121, 249, 0.8); }
     }
     .vip-btn-glow { animation: vipPulse 2.2s infinite ease-in-out; }
+    .gp-btn {
+      box-shadow: 0 5px 0 rgba(0,0,0,.55), 0 8px 12px rgba(0,0,0,.5), inset 0 -3px 5px rgba(0,0,0,.3);
+      border: 2px solid rgba(255,255,255,.35);
+      transition: transform .05s;
+    }
+    .gp-btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 1px 0 rgba(0,0,0,.55), inset 0 -3px 5px rgba(0,0,0,.3);
+    }
+    @keyframes skillPop {
+      0% { transform: scale(0.75) translateY(-4px); opacity: 0; }
+      20% { transform: scale(1.06) translateY(0); opacity: 1; }
+      85% { transform: scale(1) translateY(0); opacity: 1; }
+      100% { transform: scale(0.95) translateY(-3px); opacity: 0; }
+    }
+    .skill-callout-anim {
+      animation: skillPop 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
-  <!-- Header (기본틀 유지) -->
+  <!-- Header -->
   <header class="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur px-4 py-2.5 sticky top-0 z-30 shadow-lg shadow-black/25">
     <div class="max-w-4xl mx-auto flex flex-col gap-2">
       <div class="flex flex-wrap items-center justify-between gap-2">
@@ -63,7 +81,7 @@
       </div>
 
       <div class="flex items-center justify-between gap-2 pt-1.5 border-t border-slate-800/70">
-        <p id="syncStatusText" class="text-[11px] text-slate-400 truncate">우측 상단 [로그인]을 눌러 전적을 영구 보관하세요</p>
+        <p id="syncStatusText" class="text-[11px] text-slate-400 truncate">대기실에서 나무 샌드백으로 스킬을 바로 연습할 수 있습니다</p>
         <div class="flex items-center gap-1.5 shrink-0 ml-auto">
           <button id="bgmToggleBtn" type="button" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-indigo-950/80 hover:bg-indigo-900/80 border border-indigo-700/60 text-indigo-200 transition active:scale-95 cursor-pointer">🎵 배경음 ON</button>
           <button id="soundToggleBtn" type="button" class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 transition active:scale-95 cursor-pointer">🔊 효과음 ON</button>
@@ -79,14 +97,14 @@
     <section class="bg-slate-900/90 border border-slate-800 rounded-2xl p-3 shadow-xl flex items-center justify-between gap-2 flex-wrap">
       <div class="flex items-center gap-2">
         <button id="modePracticeTab" type="button" class="px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-amber-500 text-slate-950 shadow transition cursor-pointer">
-          🥋 연습 모드 (AI 대결)
+          🥋 일반 게임 (STAGE 1~5)
         </button>
         <button id="modePvPTab" type="button" class="px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer">
           ⚔️ 대전 모드 (실시간 매칭)
         </button>
       </div>
       <div class="flex items-center gap-2 text-xs font-bold">
-        <span id="stageModeLabel" class="px-2.5 py-0.5 rounded-lg bg-slate-800 border border-slate-700 text-amber-300">2선승제 · 링아웃 있음</span>
+        <span id="stageModeLabel" class="px-2.5 py-0.5 rounded-lg bg-amber-500/20 border border-amber-400/50 text-amber-300">STAGE 1 · 대기실</span>
         <span id="recordBadge" class="px-2 py-0.5 rounded-lg bg-slate-800 border border-slate-700 text-sky-300">0승 0패</span>
       </div>
     </section>
@@ -136,7 +154,6 @@
         <button id="pvpStartMatchBtn" type="button" disabled class="px-5 py-2.5 rounded-xl bg-slate-800 text-slate-500 border border-slate-700 font-black text-xs sm:text-sm cursor-not-allowed">⚔️ 대전 시작하기</button>
       </div>
 
-      <!-- 대전모드 랭킹 TOP 10 -->
       <div class="pt-2 border-t border-slate-800 bg-slate-950/90 border rounded-xl p-3">
         <div class="flex items-center justify-between mb-2">
           <span class="text-xs font-extrabold text-amber-300">🏆 나이트파이터 랭킹 TOP 10</span>
@@ -147,13 +164,13 @@
     </section>
 
     <!-- ========================================== -->
-    <!-- 위쪽 게임 화면 (포즈 프리뷰 & 실시간 1:1 격투) -->
+    <!-- 위쪽 게임 화면 (대기실 나무샌드백 연습 & 본 대결) -->
     <!-- ========================================== -->
     <section id="gameAreaSection" class="relative bg-slate-900 border-2 border-amber-500/40 rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
       <div id="canvasWrapper" class="relative w-full aspect-[16/9] sm:aspect-auto sm:h-[400px] min-h-[240px] bg-slate-950">
         <canvas id="gameCanvas" class="absolute inset-0 w-full h-full block"></canvas>
 
-        <!-- 나이트파이터 아케이드 상단 체력바 & 라운드 타이머 -->
+        <!-- 상단 체력바 & 라운드 타이머 -->
         <div id="arcadeTopHud" class="absolute top-2.5 inset-x-3 flex items-center gap-2 pointer-events-none z-10">
           <!-- 1P HP -->
           <div class="flex-1 min-w-0">
@@ -166,17 +183,17 @@
             </div>
           </div>
 
-          <!-- 타이머 & K.O. -->
-          <div class="shrink-0 w-14 h-12 rounded-xl bg-slate-950/90 border-2 border-amber-400 flex flex-col items-center justify-center shadow-lg">
-            <span class="text-[9px] font-black text-amber-300 leading-none">TIME</span>
-            <span id="hudTimer" class="text-lg font-black text-white leading-tight tabular-nums">60</span>
+          <!-- 타이머 / STAGE 배지 -->
+          <div class="shrink-0 px-2.5 h-12 rounded-xl bg-slate-950/90 border-2 border-amber-400 flex flex-col items-center justify-center shadow-lg">
+            <span id="hudTimerLabel" class="text-[9px] font-black text-amber-300 leading-none">연습실</span>
+            <span id="hudTimer" class="text-base font-black text-white leading-tight tabular-nums">FREE</span>
           </div>
 
           <!-- 2P HP -->
           <div class="flex-1 min-w-0">
-            <div class="flex justify-between items-center text-[11px] font-black text-rose-300 mb-0.5 px-1">
+            <div class="flex justify-between items-center text-[11px] font-black text-amber-200 mb-0.5 px-1">
               <span id="hudP2Rounds" class="text-amber-300">○○</span>
-              <span id="hudP2Name" class="truncate">2P 파이</span>
+              <span id="hudP2Name" class="truncate">🪵 나무 샌드백</span>
             </div>
             <div class="w-full h-4 bg-rose-950/90 border-2 border-slate-200/80 rounded-sm overflow-hidden shadow-md">
               <div id="hudP2Hp" class="h-full bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 transition-all duration-75" style="width:100%"></div>
@@ -184,21 +201,41 @@
           </div>
         </div>
 
-        <!-- 중앙 아케이드 배너 (ROUND 1 / FIGHT! / K.O.! / RING OUT!) -->
+        <!-- 에너지바와 캐릭터 사이 전용 스킬명 & 콤보 표시 영역 -->
+        <div class="pointer-events-none absolute top-[62px] inset-x-4 flex items-start justify-between z-10">
+          <div class="flex flex-col items-start gap-1">
+            <div id="p1SkillCallout" class="hidden px-3 py-1 rounded-lg bg-slate-950/90 border-2 border-sky-400 text-xs sm:text-sm font-black text-amber-300 tracking-wide shadow-lg">
+              ⚡ 철산고!
+            </div>
+            <div id="p1ComboBadge" class="hidden px-2.5 py-0.5 rounded-md bg-amber-500 text-slate-950 text-[11px] font-black shadow">
+              2 HITS!
+            </div>
+          </div>
+          <div class="flex flex-col items-end gap-1 ml-auto">
+            <div id="p2SkillCallout" class="hidden px-3 py-1 rounded-lg bg-slate-950/90 border-2 border-rose-400 text-xs sm:text-sm font-black text-amber-300 tracking-wide shadow-lg">
+              ⚡ 비연각!
+            </div>
+            <div id="p2ComboBadge" class="hidden px-2.5 py-0.5 rounded-md bg-rose-500 text-white text-[11px] font-black shadow">
+              2 HITS!
+            </div>
+          </div>
+        </div>
+
+        <!-- 중앙 아케이드 배너 (ROUND / FIGHT! / K.O.! 전용) -->
         <div id="centerBanner" class="pointer-events-none absolute inset-0 z-20 hidden items-center justify-center">
-          <div id="centerBannerText" class="px-8 py-3 rounded-2xl bg-slate-950/80 border-2 border-amber-400 text-3xl sm:text-5xl font-black tracking-wider text-amber-300 drop-shadow-[0_4px_20px_rgba(251,191,36,0.9)]">
+          <div id="centerBannerText" class="px-8 py-3 rounded-2xl bg-slate-950/85 border-2 border-amber-400 text-2xl sm:text-4xl font-black tracking-wider text-amber-300 text-center drop-shadow-[0_4px_20px_rgba(251,191,36,0.9)]">
             FIGHT!
           </div>
         </div>
 
-        <!-- 최종 승리 배너 -->
+        <!-- 스테이지 클리어 / 최종 우승 / 패배 배너 -->
         <div id="matchResultBanner" class="absolute inset-0 z-30 hidden items-center justify-center bg-black/75 backdrop-blur-sm">
-          <div class="bg-slate-900/95 border-2 border-amber-400 rounded-2xl px-8 py-6 text-center shadow-2xl">
+          <div class="bg-slate-900/95 border-2 border-amber-400 rounded-2xl px-8 py-6 text-center shadow-2xl max-w-sm mx-4">
             <div id="matchWinnerTitle" class="text-2xl sm:text-3xl font-black text-amber-300">🏆 1P WIN!</div>
-            <div id="matchResultSub" class="text-xs sm:text-sm font-bold text-slate-200 mt-1">완벽한 승리입니다!</div>
-            <div class="mt-4 flex gap-2 justify-center">
-              <button id="rematchBtn" type="button" class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black cursor-pointer">🔄 재대결</button>
-              <button id="backSelectBtn" type="button" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-black border border-slate-700 cursor-pointer">👤 캐릭터 변경</button>
+            <div id="matchResultSub" class="text-xs sm:text-sm font-bold text-slate-200 mt-1.5">완벽한 승리입니다!</div>
+            <div class="mt-5 flex gap-2 justify-center">
+              <button id="rematchBtn" type="button" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black cursor-pointer">▶ 다음 STAGE</button>
+              <button id="backSelectBtn" type="button" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-black border border-slate-700 cursor-pointer">🪵 대기실로</button>
             </div>
           </div>
         </div>
@@ -206,73 +243,67 @@
     </section>
 
     <!-- ========================================== -->
-    <!-- 아래쪽 1: 캐릭터 얼굴 선택창 (선택 시 위 화면에 포즈 등장!) -->
+    <!-- 아래쪽 1: 캐릭터 얼굴 선택창 -->
     <!-- ========================================== -->
     <section id="charSelectPanel" class="bg-slate-900/95 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col gap-3">
       <div class="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h2 class="text-xs sm:text-sm font-black text-amber-300">🎭 파이터 얼굴 선택 (선택하면 위 화면에서 포즈를 취합니다!)</h2>
-          <p class="text-[11px] text-slate-400">1P(내 캐릭터)와 2P(상대 AI)를 모두 선택하고 [대결 시작]을 누르세요.</p>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h2 class="text-xs sm:text-sm font-black text-amber-300">🎭 내 파이터 선택 (1P)</h2>
+            <span class="px-2 py-0.5 rounded bg-blue-600/30 border border-blue-400 text-blue-200 text-[10px] font-black">🔵 파랑: 팔 스킬(강손)</span>
+            <span class="px-2 py-0.5 rounded bg-rose-600/30 border border-rose-400 text-rose-200 text-[10px] font-black">🔴 빨강: 발 스킬(강발)</span>
+          </div>
+          <p id="selectGuideText" class="text-[11px] text-slate-400 mt-0.5">1P 파이터를 고른 뒤 <b>나무 샌드백</b>으로 스킬을 연습하고, [STAGE 1 도전 시작]을 누르면 나머지 파이터들과 랜덤 연전을 펼칩니다!</p>
         </div>
-        <div class="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+
+        <div id="pvpPickTargetGroup" class="hidden items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
           <button id="pickTargetP1Btn" type="button" class="px-3 py-1 rounded-lg text-xs font-black bg-sky-600 text-white cursor-pointer">1P 선택중</button>
           <button id="pickTargetP2Btn" type="button" class="px-3 py-1 rounded-lg text-xs font-black text-slate-400 hover:text-white cursor-pointer">2P(상대) 선택</button>
         </div>
       </div>
 
-      <!-- 얼굴 포트레이트 그리드 -->
       <div id="facePortraitGrid" class="grid grid-cols-3 sm:grid-cols-6 gap-2.5"></div>
 
-      <!-- 양쪽 선택 상태 & 대결 시작 버튼 -->
       <div class="pt-2 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2.5">
-        <div class="flex items-center gap-2 text-xs font-bold">
-          <span id="p1ReadyChip" class="px-2.5 py-1 rounded-lg bg-sky-500/20 border border-sky-400/50 text-sky-300">1P: 아키라 준비</span>
-          <span class="text-slate-500 font-black">VS</span>
-          <span id="p2ReadyChip" class="px-2.5 py-1 rounded-lg bg-rose-500/20 border border-rose-400/50 text-rose-300">2P: 파이 준비</span>
+        <div class="flex items-center gap-2 text-xs font-bold flex-wrap">
+          <span id="p1ReadyChip" class="px-2.5 py-1 rounded-lg bg-sky-500/20 border border-sky-400/50 text-sky-300">1P: 아키라</span>
+          <span id="p2ReadyWrap" class="hidden items-center gap-2">
+            <span class="text-slate-500 font-black">VS</span>
+            <span id="p2ReadyChip" class="px-2.5 py-1 rounded-lg bg-rose-500/20 border border-rose-400/50 text-rose-300">2P: 파이</span>
+          </span>
         </div>
         <button id="startFightBtn" type="button" class="w-full sm:w-auto px-7 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 hover:from-amber-300 hover:to-rose-400 text-slate-950 font-black text-sm shadow-lg shadow-amber-500/25 active:scale-95 transition cursor-pointer">
-          🥊 대결 시작! (FIGHT!)
+          🥊 STAGE 1 도전 시작!
         </button>
       </div>
     </section>
 
     <!-- ========================================== -->
-    <!-- 아래쪽 2: 대결 중 아케이드 조작 패드 (PC 키보드 + 모바일/마우스) -->
+    <!-- 아래쪽 2: 아케이드 조작 패드 -->
     <!-- ========================================== -->
-    <section id="arcadeControlsPanel" class="hidden bg-slate-900/95 border border-slate-800 rounded-2xl p-3.5 shadow-xl flex-col gap-3">
+    <section id="arcadeControlsPanel" class="bg-slate-900/95 border border-slate-800 rounded-2xl p-3.5 shadow-xl flex flex-col gap-3">
       <div class="flex items-center justify-between gap-3 flex-wrap">
-        <!-- 방향키 패드 -->
-        <div class="flex items-center gap-1.5">
-          <button id="padLeft" type="button" class="w-12 h-12 rounded-xl bg-slate-950 active:bg-sky-600 border border-slate-700 text-lg font-black cursor-pointer">◀</button>
-          <div class="flex flex-col gap-1">
-            <button id="padUp" type="button" class="w-12 h-7 rounded-lg bg-slate-950 active:bg-sky-600 border border-slate-700 text-xs font-black cursor-pointer">▲ 점프</button>
-            <button id="padDown" type="button" class="w-12 h-7 rounded-lg bg-slate-950 active:bg-sky-600 border border-slate-700 text-xs font-black cursor-pointer">▼ 앉기</button>
-          </div>
-          <button id="padRight" type="button" class="w-12 h-12 rounded-xl bg-slate-950 active:bg-sky-600 border border-slate-700 text-lg font-black cursor-pointer">▶</button>
+        <div id="stickBase" class="relative w-32 h-32 shrink-0 rounded-full border-4 border-slate-700 shadow-[inset_0_6px_18px_rgba(0,0,0,.9),0_4px_12px_rgba(0,0,0,.6)]" style="touch-action:none;background:radial-gradient(circle at 50% 40%,#1e293b,#020617 75%)">
+          <span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-600 text-xs">◀</span>
+          <span class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-600 text-xs">▶</span>
+          <span class="absolute top-1.5 left-1/2 -translate-x-1/2 text-slate-600 text-xs">▲</span>
+          <span class="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-slate-600 text-xs">▼</span>
+          <div id="stickKnob" class="absolute w-12 h-12 rounded-full" style="left:50%;top:50%;margin:-24px 0 0 -24px;background:radial-gradient(circle at 35% 30%,#fca5a5,#dc2626 45%,#7f1d1d);box-shadow:0 6px 10px rgba(0,0,0,.7),inset 0 -4px 6px rgba(0,0,0,.35)"></div>
         </div>
-
-        <!-- 아케이드 액션 버튼 (P / K / G / SP) -->
-        <div class="flex items-center gap-2">
-          <button id="btnPunch" type="button" class="w-14 h-14 rounded-full bg-gradient-to-b from-sky-400 to-blue-600 active:scale-90 text-white font-black text-xs shadow-lg border-2 border-sky-200 cursor-pointer flex flex-col items-center justify-center">
-            <span class="text-sm">👊</span><span>P (Z)</span>
-          </button>
-          <button id="btnKick" type="button" class="w-14 h-14 rounded-full bg-gradient-to-b from-rose-400 to-red-600 active:scale-90 text-white font-black text-xs shadow-lg border-2 border-rose-200 cursor-pointer flex flex-col items-center justify-center">
-            <span class="text-sm">🦶</span><span>K (X)</span>
-          </button>
-          <button id="btnGuard" type="button" class="w-14 h-14 rounded-full bg-gradient-to-b from-emerald-400 to-green-600 active:scale-90 text-white font-black text-xs shadow-lg border-2 border-emerald-200 cursor-pointer flex flex-col items-center justify-center">
-            <span class="text-sm">🛡️</span><span>G (C)</span>
-          </button>
-          <button id="btnSpecial" type="button" class="w-14 h-14 rounded-full bg-gradient-to-b from-amber-300 to-orange-600 active:scale-90 text-slate-950 font-black text-xs shadow-lg border-2 border-yellow-200 cursor-pointer flex flex-col items-center justify-center">
-            <span class="text-sm">💥</span><span>필살(SPC)</span>
-          </button>
+        <div class="flex flex-col items-center gap-2">
+          <button id="abortFightBtn" type="button" class="hidden px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-900 text-slate-300 text-[11px] font-bold border border-slate-700 cursor-pointer">↩ 대기실(샌드백)</button>
+          <div class="text-[10px] text-slate-500 text-center leading-tight">조이스틱 <b class="text-emerald-400">뒤로 = 자동 가드</b></div>
+          <div id="skillStatus" class="text-[11px] text-slate-200 text-center leading-tight font-bold"></div>
         </div>
-
-        <button id="abortFightBtn" type="button" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-rose-900 text-slate-300 text-xs font-bold border border-slate-700 cursor-pointer">
-          ↩ 선택창으로
-        </button>
+        <div class="grid grid-cols-2 gap-x-3 gap-y-2.5 shrink-0" style="transform:rotate(-6deg)">
+          <button id="btn1" type="button" class="gp-btn w-[60px] h-[60px] rounded-full text-white font-black flex flex-col items-center justify-center cursor-pointer" style="background:radial-gradient(circle at 35% 28%,#7dd3fc,#2563eb 60%,#1e3a8a)"><span class="text-lg leading-none">1</span><span class="text-[10px]">약손</span></button>
+          <button id="btn2" type="button" class="gp-btn w-[60px] h-[60px] rounded-full text-white font-black flex flex-col items-center justify-center cursor-pointer" style="background:radial-gradient(circle at 35% 28%,#a5b4fc,#4f46e5 60%,#312e81)"><span class="text-lg leading-none">2</span><span class="text-[10px]">강손</span></button>
+          <button id="btn3" type="button" class="gp-btn w-[60px] h-[60px] rounded-full text-white font-black flex flex-col items-center justify-center cursor-pointer" style="background:radial-gradient(circle at 35% 28%,#fdba74,#ea580c 60%,#7c2d12)"><span class="text-lg leading-none">3</span><span class="text-[10px]">약발</span></button>
+          <button id="btn4" type="button" class="gp-btn w-[60px] h-[60px] rounded-full text-white font-black flex flex-col items-center justify-center cursor-pointer" style="background:radial-gradient(circle at 35% 28%,#fca5a5,#dc2626 60%,#7f1d1d)"><span class="text-lg leading-none">4</span><span class="text-[10px]">강발</span></button>
+        </div>
       </div>
       <div class="text-center text-[11px] text-slate-400">
-        키보드: <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-sky-300">방향키(←→↑↓)</kbd> 이동/점프/앉기 · <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-sky-300">Z</kbd> 펀치 · <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-rose-300">X</kbd> 킥 · <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-emerald-300">C</kbd> 가드 · <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-amber-300">Space</kbd> 필살기
+        키보드: 방향키 이동·점프·앉기 (<b class="text-emerald-300">뒤로 = 자동 가드</b>) · <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-sky-300">1/Z</kbd> 약손 · <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-indigo-300">2/X</kbd> 강손 · <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-orange-300">3/C</kbd> 약발 · <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-rose-300">4/V</kbd> 강발 · <b class="text-amber-300">뒤(←) · 밑(↓) · 앞(→) + 강손 또는 강발 = 스킬 발동</b> (가드 가능 · 직격 시 다운!)
       </div>
     </section>
 
@@ -300,7 +331,7 @@
         <h2 class="text-base font-black text-amber-300">👑 나이트파이터 VIP 영구 패키지</h2>
         <button id="vipCloseBtn" type="button" class="text-slate-400 hover:text-white font-bold px-2 py-1 cursor-pointer">✕</button>
       </div>
-      <p class="text-xs text-slate-300 mb-4">모든 파이터 공격력 +15% · 황금 오오라 · 필살기 쿨타임 단축</p>
+      <p class="text-xs text-slate-300 mb-4">모든 파이터 공격력 +15% · 황금 오오라</p>
       <button id="vipMockCloseBtn" type="button" class="w-full py-2.5 rounded-xl bg-amber-400 text-slate-950 font-black text-xs cursor-pointer">확인 (7,000원)</button>
     </div>
   </div>
@@ -332,7 +363,7 @@
   <div id="resetModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
     <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-sm w-full p-5 shadow-2xl">
       <h2 class="text-base font-extrabold text-slate-100 mb-1.5">대결 초기화</h2>
-      <p class="text-xs text-slate-400 mb-4">현재 대결을 종료하고 캐릭터 선택 포즈 화면으로 돌아갈까요?</p>
+      <p class="text-xs text-slate-400 mb-4">현재 진행 중인 STAGE를 종료하고 나무 샌드백 대기실로 돌아갈까요?</p>
       <div class="flex justify-end gap-2">
         <button id="resetCancelBtn" type="button" class="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 text-slate-200 cursor-pointer">취소</button>
         <button id="resetConfirmBtn" type="button" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-rose-600 text-white cursor-pointer">초기화하기</button>
@@ -343,44 +374,44 @@
   <script>
     (() => {
       // ==========================================
-      // 1. 나이트파이터 스타일 6종 파이터 정의
+      // 1. 6종 파이터 정의 (모든 스킬 가드 가능, 딜레이 없음)
       // ==========================================
       const FIGHTERS = {
         akira: {
-          id: 'akira', name: '아키라', style: '팔극권',
-          skin: '#fcd3a1', hair: '#1e293b', headband: '#ef4444',
-          top: '#f8fafc', pants: '#0f172a', belt: '#1e293b', aura: '#38bdf8',
-          power: 1.15, speed: 215, specialName: '철산고!'
+          id:'akira', name:'아키라', style:'팔극권',
+          skin:'#f2c29b', hair:'#14151a', headband:'#ef4444', top:'#f1f5f9', stripe:null, sleeve:'#e2e8f0', pants:'#d6d3d1', trim:'#94a3b8', shoe:'#f2c29b', glove:'#f2c29b', belt:'#18181b',
+          hairStyle:'spike', body:'gi', bulk:1.05, h:1, aura:'#38bdf8', power:1.15, speed:215,
+          skill:{ name:'철산고!', button:'punch', buttonLabel:'팔(강손)', motion:'tetsuzanko', dur:0.50, lunge:440, reach:100, dmg:25 }
         },
         pai: {
-          id: 'pai', name: '파이', style: '연권',
-          skin: '#fde6c4', hair: '#0f172a', headband: '#38bdf8',
-          top: '#2563eb', pants: '#1e3a8a', belt: '#fde047', aura: '#60a5fa',
-          power: 0.95, speed: 265, specialName: '비연각!'
+          id:'pai', name:'파이', style:'연권',
+          skin:'#f7d5b0', hair:'#18181b', headband:'#f43f5e', top:'#be123c', stripe:'#fde047', sleeve:null, pants:'#1f2937', trim:'#fde047', shoe:'#be123c', glove:'#f7d5b0', belt:'#fde047',
+          hairStyle:'ponytail', body:'suit', bulk:0.86, h:0.93, aura:'#fb7185', power:0.95, speed:265,
+          skill:{ name:'비연각!', button:'kick', buttonLabel:'발(강발)', motion:'flying_kick', dur:0.48, lunge:390, vy:-290, reach:115, dmg:22 }
         },
         jacky: {
-          id: 'jacky', name: '잭키', style: '절권도',
-          skin: '#fcd3a1', hair: '#facc15', headband: null,
-          top: '#dc2626', pants: '#18181b', belt: '#f59e0b', aura: '#fbbf24',
-          power: 1.05, speed: 245, specialName: '섬머솔트 킥!'
+          id:'jacky', name:'잭키', style:'절권도',
+          skin:'#f0b98f', hair:'#facc15', headband:null, top:'#dc2626', stripe:'#f8fafc', sleeve:null, pants:'#22232b', trim:'#dc2626', shoe:'#f1f5f9', glove:'#17171c', belt:'#d4a017',
+          hairStyle:'spike', body:'jacket', bulk:1, h:1, aura:'#fbbf24', power:1.05, speed:245,
+          skill:{ name:'섬머솔트 킥!', button:'kick', buttonLabel:'발(강발)', motion:'somersault', dur:0.50, lunge:250, vy:-580, reach:110, dmg:24 }
         },
         wolf: {
-          id: 'wolf', name: '울프', style: '레슬링',
-          skin: '#f3b784', hair: '#92400e', headband: '#fbbf24',
-          top: '#b91c1c', pants: '#1e293b', belt: '#fbbf24', aura: '#f97316',
-          power: 1.25, speed: 190, specialName: '자이언트 스윙!'
+          id:'wolf', name:'울프', style:'레슬링',
+          skin:'#e0a070', hair:'#a16207', headband:null, top:'#e0a070', stripe:null, sleeve:null, pants:'#b91c1c', trim:'#fbbf24', shoe:'#1f2937', glove:'#fbbf24', belt:'#fbbf24',
+          hairStyle:'long', body:'bare', bulk:1.32, h:1.04, aura:'#f97316', power:1.25, speed:190,
+          skill:{ name:'자이언트 스윙!', button:'punch', buttonLabel:'팔(강손)', motion:'lariat_slam', dur:0.54, lunge:240, reach:92, dmg:27 }
         },
         sarah: {
-          id: 'sarah', name: '사라', style: '마샬아츠',
-          skin: '#fde6c4', hair: '#fde047', headband: null,
-          top: '#0284c7', pants: '#0369a1', belt: '#f8fafc', aura: '#22d3ee',
-          power: 1.0, speed: 255, specialName: '라이징 니!'
+          id:'sarah', name:'사라', style:'마샬아츠',
+          skin:'#fbe0c8', hair:'#fde047', headband:null, top:'#38bdf8', stripe:'#f8fafc', sleeve:null, pants:'#0ea5e9', trim:'#f8fafc', shoe:'#f8fafc', glove:'#f8fafc', belt:'#f8fafc',
+          hairStyle:'ponytail', body:'suit', bulk:0.88, h:0.95, aura:'#22d3ee', power:1.0, speed:255,
+          skill:{ name:'라이징 니!', button:'kick', buttonLabel:'발(강발)', motion:'rising_knee', dur:0.46, lunge:320, vy:-450, reach:106, dmg:23 }
         },
         lau: {
-          id: 'lau', name: '라우', style: '호권',
-          skin: '#f5c799', hair: '#475569', headband: null,
-          top: '#d97706', pants: '#78350f', belt: '#fef08a', aura: '#fb923c',
-          power: 1.1, speed: 225, specialName: '호포 연격!'
+          id:'lau', name:'라우', style:'호권',
+          skin:'#f0c090', hair:'#1c1917', headband:null, top:'#f59e0b', stripe:null, sleeve:'#f59e0b', pants:'#451a03', trim:'#fde68a', shoe:'#292524', glove:'#f0c090', belt:'#7c2d12',
+          hairStyle:'short', body:'gi', bulk:1, h:0.98, aura:'#fb923c', power:1.1, speed:225,
+          skill:{ name:'호포 연격!', button:'punch', buttonLabel:'팔(강손)', motion:'tiger_palm', dur:0.48, lunge:330, reach:108, dmg:23 }
         }
       };
 
@@ -448,6 +479,14 @@
           g.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
           osc.connect(g); g.connect(ctxA.destination);
           osc.start(now); osc.stop(now + 0.15);
+        } else if (type === 'skill') {
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(280, now);
+          osc.frequency.exponentialRampToValueAtTime(720, now + 0.18);
+          g.gain.setValueAtTime(0.18, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+          osc.connect(g); g.connect(ctxA.destination);
+          osc.start(now); osc.stop(now + 0.26);
         } else if (type === 'hit') {
           osc.type = 'sawtooth';
           osc.frequency.setValueAtTime(190, now);
@@ -456,14 +495,22 @@
           g.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
           osc.connect(g); g.connect(ctxA.destination);
           osc.start(now); osc.stop(now + 0.14);
+        } else if (type === 'down') {
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(140, now);
+          osc.frequency.exponentialRampToValueAtTime(34, now + 0.28);
+          g.gain.setValueAtTime(0.24, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+          osc.connect(g); g.connect(ctxA.destination);
+          osc.start(now); osc.stop(now + 0.31);
         } else if (type === 'guard') {
           osc.type = 'triangle';
-          osc.frequency.setValueAtTime(360, now);
-          osc.frequency.exponentialRampToValueAtTime(180, now + 0.08);
-          g.gain.setValueAtTime(0.11, now);
-          g.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+          osc.frequency.setValueAtTime(480, now);
+          osc.frequency.exponentialRampToValueAtTime(220, now + 0.09);
+          g.gain.setValueAtTime(0.14, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
           osc.connect(g); g.connect(ctxA.destination);
-          osc.start(now); osc.stop(now + 0.1);
+          osc.start(now); osc.stop(now + 0.11);
         } else if (type === 'ko') {
           osc.type = 'sawtooth';
           osc.frequency.setValueAtTime(320, now);
@@ -472,6 +519,16 @@
           g.gain.exponentialRampToValueAtTime(0.001, now + 0.58);
           osc.connect(g); g.connect(ctxA.destination);
           osc.start(now); osc.stop(now + 0.6);
+        } else if (type === 'champion') {
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(523.25, now);
+          osc.frequency.setValueAtTime(659.25, now + 0.12);
+          osc.frequency.setValueAtTime(783.99, now + 0.24);
+          osc.frequency.setValueAtTime(1046.5, now + 0.38);
+          g.gain.setValueAtTime(0.2, now);
+          g.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
+          osc.connect(g); g.connect(ctxA.destination);
+          osc.start(now); osc.stop(now + 0.92);
         }
       }
 
@@ -622,7 +679,7 @@
                 p1Rounds = data.p1Rounds;
                 p2Rounds = data.p2Rounds;
               } else if (data.clientInput && pvpRole === 'left') {
-                if (data.action) triggerFighterAction(f2, f1, data.action);
+                if (data.action) triggerFighterAction(f2, f1, data.action, data.strong);
                 f2.moveDir = data.moveDir || 0;
                 f2.guarding = Boolean(data.guarding);
                 f2.crouching = Boolean(data.crouching);
@@ -635,12 +692,15 @@
       // ==========================================
       // 4. 얼굴 포트레이트 SVG 생성 & 선택 UI
       // ==========================================
-      let pickTarget = 'p1'; // 'p1' | 'p2'
+      let pickTarget = 'p1';
 
       function makeFaceSvg(f) {
+        const isArmSkill = f.skill.button === 'punch';
+        const svgBg = isArmSkill ? '#172554' : '#4c0519';
+        const svgStroke = isArmSkill ? '#60a5fa' : '#fb7185';
         return `
           <svg viewBox="0 0 64 64" class="w-12 h-12 sm:w-14 sm:h-14 mx-auto drop-shadow">
-            <rect x="4" y="4" width="56" height="56" rx="12" fill="#0f172a" stroke="${f.aura}" stroke-width="2.5"/>
+            <rect x="4" y="4" width="56" height="56" rx="12" fill="${svgBg}" stroke="${svgStroke}" stroke-width="2.5"/>
             <path d="M16 58 C18 44, 46 44, 48 58 Z" fill="${f.top}"/>
             <circle cx="32" cy="30" r="14" fill="${f.skin}"/>
             <path d="M18 26 C18 13, 46 13, 46 26 C42 20, 22 20, 18 26 Z" fill="${f.hair}"/>
@@ -657,33 +717,48 @@
         grid.innerHTML = '';
         Object.values(FIGHTERS).forEach(f => {
           const isP1 = state.p1Id === f.id;
-          const isP2 = state.p2Id === f.id;
+          const isP2 = (currentMode === 'pvp') && (state.p2Id === f.id);
+          const isArmSkill = f.skill.button === 'punch';
+
+          const baseBgClass = isArmSkill
+            ? 'bg-gradient-to-b from-blue-900/85 to-blue-950/95 hover:from-blue-800/90 hover:to-blue-900/95'
+            : 'bg-gradient-to-b from-rose-900/85 to-rose-950/95 hover:from-rose-800/90 hover:to-rose-900/95';
+
+          const borderClass = (isP1 && isP2)
+            ? 'border-amber-400 ring-2 ring-amber-400/50'
+            : isP1
+              ? 'border-sky-300 ring-2 ring-sky-400/60 shadow-lg shadow-sky-500/25'
+              : isP2
+                ? 'border-rose-300 ring-2 ring-rose-400/60 shadow-lg shadow-rose-500/25'
+                : (isArmSkill ? 'border-blue-500/60' : 'border-rose-500/60');
+
+          const badgeClass = isArmSkill
+            ? 'bg-blue-500/30 border border-blue-300/60 text-blue-100'
+            : 'bg-rose-500/30 border border-rose-300/60 text-rose-100';
+
           const btn = document.createElement('button');
           btn.type = 'button';
-          btn.className = `relative p-2 rounded-xl border-2 transition cursor-pointer flex flex-col items-center gap-1 ${
-            isP1 && isP2 ? 'bg-purple-950/50 border-amber-400' :
-            isP1 ? 'bg-sky-950/50 border-sky-400 shadow-lg shadow-sky-500/20' :
-            isP2 ? 'bg-rose-950/50 border-rose-400 shadow-lg shadow-rose-500/20' :
-            'bg-slate-950/80 border-slate-800 hover:border-slate-600'
-          }`;
+          btn.className = `relative p-2 rounded-xl border-2 transition cursor-pointer flex flex-col items-center gap-1 ${baseBgClass} ${borderClass}`;
           btn.innerHTML = `
-            ${isP1 ? '<span class="absolute top-1 left-1 px-1.5 py-0.2 rounded bg-sky-500 text-slate-950 text-[9px] font-black">1P</span>' : ''}
-            ${isP2 ? '<span class="absolute top-1 right-1 px-1.5 py-0.2 rounded bg-rose-500 text-white text-[9px] font-black">2P</span>' : ''}
+            ${isP1 ? '<span class="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-sky-400 text-slate-950 text-[9px] font-black shadow">1P</span>' : ''}
+            ${isP2 ? '<span class="absolute top-1 right-1 px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 text-[9px] font-black shadow">2P</span>' : ''}
             ${makeFaceSvg(f)}
             <div class="text-xs font-black text-white leading-tight">${f.name}</div>
-            <div class="text-[9px] font-bold text-slate-400">${f.style}</div>
+            <div class="px-1.5 py-0.5 rounded text-[9px] font-extrabold ${badgeClass}">${f.skill.buttonLabel}: ${f.skill.name}</div>
           `;
           btn.addEventListener('click', () => {
             getAudioContext();
             playSfx('select');
-            if (pickTarget === 'p1') {
+            if (currentMode === 'practice' || pickTarget === 'p1') {
               state.p1Id = f.id;
               f1 = createFighter(f.id, 1);
               f1.poseTimer = 1.2;
             } else {
               state.p2Id = f.id;
-              f2 = createFighter(f.id, -1);
-              f2.poseTimer = 1.2;
+              if (phase !== 'select') {
+                f2 = createFighter(f.id, -1);
+                f2.poseTimer = 1.2;
+              }
             }
             saveState(false);
             updateSelectUi();
@@ -692,25 +767,81 @@
         });
       }
 
+      // ==========================================
+      // 5. 아케이드 STAGE 1 ~ 5 진행 시스템 & UI 갱신
+      // ==========================================
+      let arcadeQueue = [];
+      let arcadeStage = 1;
+      const TOTAL_STAGES = 5;
+
+      function shuffleArray(arr) {
+        const a = [...arr];
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        return a;
+      }
+
       function updateSelectUi() {
         const c1 = FIGHTERS[state.p1Id];
         const c2 = FIGHTERS[state.p2Id];
-        document.getElementById('p1ReadyChip').textContent = `1P: ${c1.name} (${c1.style}) 준비`;
-        document.getElementById('p2ReadyChip').textContent = `2P: ${c2.name} (${c2.style}) 준비`;
+        const isPvp = currentMode === 'pvp';
+
+        const pvpPickGroup = document.getElementById('pvpPickTargetGroup');
+        const p2ReadyWrap = document.getElementById('p2ReadyWrap');
+        if (isPvp) {
+          pvpPickGroup.classList.remove('hidden');
+          pvpPickGroup.classList.add('flex');
+          p2ReadyWrap.classList.remove('hidden');
+          p2ReadyWrap.classList.add('flex');
+        } else {
+          pickTarget = 'p1';
+          pvpPickGroup.classList.add('hidden');
+          pvpPickGroup.classList.remove('flex');
+          p2ReadyWrap.classList.add('hidden');
+          p2ReadyWrap.classList.remove('flex');
+        }
+
+        document.getElementById('p1ReadyChip').textContent = `1P: ${c1.name} (←↓→+${c1.skill.buttonLabel}: ${c1.skill.name})`;
+        document.getElementById('p2ReadyChip').textContent = `2P: ${c2.name} (←↓→+${c2.skill.buttonLabel}: ${c2.skill.name})`;
         document.getElementById('hudP1Name').textContent = `1P ${c1.name}`;
-        document.getElementById('hudP2Name').textContent = `2P ${c2.name}`;
+
+        if (phase === 'select') {
+          document.getElementById('hudP2Name').textContent = '🪵 나무 샌드백 (연습용)';
+          document.getElementById('stageModeLabel').textContent = isPvp ? '실시간 1:1 대전' : 'STAGE 1 · 대기실';
+          document.getElementById('hudTimerLabel').textContent = '연습실';
+        } else if (isPvp) {
+          document.getElementById('hudP2Name').textContent = `2P ${c2.name}`;
+          document.getElementById('stageModeLabel').textContent = '실시간 1:1 대전';
+          document.getElementById('hudTimerLabel').textContent = 'TIME';
+        } else {
+          document.getElementById('hudP2Name').textContent = `CPU ${c2.name}`;
+          document.getElementById('stageModeLabel').textContent = `STAGE ${arcadeStage} / ${TOTAL_STAGES}`;
+          document.getElementById('hudTimerLabel').textContent = `STAGE ${arcadeStage}`;
+        }
+
         document.getElementById('recordBadge').textContent = `${state.wins}승 ${state.losses}패`;
         renderFacePortraits();
       }
 
       // ==========================================
-      // 5. 나이트파이터 2.5D 아레나 & 폴리곤 스타일 파이터
+      // 6. STAGE 1~5 테마별 2.5D 아레나 & 나무 샌드백 + 관절(IK) 파이터 렌더러
       // ==========================================
       const ARENA_W = 900;
       const ARENA_H = 420;
       const FLOOR_Y = 335;
       const RING_LEFT = 110;
       const RING_RIGHT = 790;
+      const SANDBAG_HOME_X = 590;
+
+      const STAGE_THEMES = {
+        1: { skyTop:'#0f172a', skyMid:'#1e3a8a', skyBot:'#f97316', deckTop:'#475569', deckMid:'#334155', deckBot:'#0f172a', border:'#fbbf24' }, // 노을 도시
+        2: { skyTop:'#020617', skyMid:'#311042', skyBot:'#9333ea', deckTop:'#3b0764', deckMid:'#1e1b4b', deckBot:'#090d16', border:'#38bdf8' }, // 밤의 네온 도장
+        3: { skyTop:'#0c4a6e', skyMid:'#38bdf8', skyBot:'#e0f2fe', deckTop:'#cbd5e1', deckMid:'#94a3b8', deckBot:'#334155', border:'#38bdf8' }, // 설원 설산
+        4: { skyTop:'#1c0a00', skyMid:'#7f1d1d', skyBot:'#ea580c', deckTop:'#57534e', deckMid:'#292524', deckBot:'#0c0a09', border:'#ef4444' }, // 용암 격투장
+        5: { skyTop:'#1e1b4b', skyMid:'#78350f', skyBot:'#facc15', deckTop:'#ca8a04', deckMid:'#713f12', deckBot:'#1c1917', border:'#fef08a' }  // 황금 챔피언 아레나
+      };
 
       const canvas = document.getElementById('gameCanvas');
       const ctx = canvas.getContext('2d');
@@ -728,193 +859,533 @@
       }
       window.addEventListener('resize', resizeCanvas);
 
-      let phase = 'select'; // 'select' | 'countdown' | 'fight' | 'roundEnd' | 'matchEnd'
+      let phase = 'select';
       let roundTimer = 60;
       let p1Rounds = 0, p2Rounds = 0;
       let animTime = 0;
+      let hitstopTimer = 0;
       let hitSparks = [];
+      let floatingLabels = [];
+      let screenShake = 0;
       let keys = {};
 
       function createFighter(id, dir) {
         const tpl = FIGHTERS[id] || FIGHTERS.akira;
         return {
           id, dir,
+          isSandbag: false,
           x: dir === 1 ? 290 : 610,
           y: FLOOR_Y,
           vx: 0, vy: 0,
           hp: 100, maxHp: 100,
-          action: 'idle', // 'idle' | 'punch' | 'kick' | 'special' | 'hit' | 'ko'
+          action: 'idle',
           actionTimer: 0,
           poseTimer: 0,
           guarding: false,
           crouching: false,
-          specialCd: 0,
           moveDir: 0,
           ringOut: false,
           hitApplied: false,
+          skillCd: 0,
+          sk: null,
+          cmd: [],
+          lastTok: null,
+          strong: false,
+          atkId: 0,
+          koT: 0,
+          wobble: 0,
+          comboCount: 0,
+          comboTimer: 0,
+          backGuard: false,
+          actionDur: 0.2,
+          ai: null,
           speed: tpl.speed,
           power: tpl.power
         };
       }
 
+      function createWoodenSandbag() {
+        return {
+          id: 'sandbag',
+          dir: -1,
+          isSandbag: true,
+          x: SANDBAG_HOME_X,
+          y: FLOOR_Y,
+          vx: 0, vy: 0,
+          hp: 9999, maxHp: 9999,
+          action: 'idle',
+          actionTimer: 0,
+          poseTimer: 0,
+          guarding: false,
+          crouching: false,
+          moveDir: 0,
+          ringOut: false,
+          hitApplied: false,
+          skillCd: 0,
+          sk: null,
+          cmd: [],
+          lastTok: null,
+          strong: false,
+          atkId: 0,
+          koT: 0,
+          wobble: 0,
+          comboCount: 0,
+          comboTimer: 0,
+          backGuard: false,
+          actionDur: 0.2,
+          ai: null,
+          speed: 0,
+          power: 0
+        };
+      }
+
       let f1 = createFighter(state.p1Id, 1);
-      let f2 = createFighter(state.p2Id, -1);
+      let f2 = createWoodenSandbag();
 
-      function drawPolygonFighter(f) {
-        const tpl = FIGHTERS[f.id] || FIGHTERS.akira;
+      function drawWoodenSandbag(sb) {
         ctx.save();
-        ctx.translate(f.x, f.y);
-        ctx.scale(f.dir, 1);
+        ctx.translate(sb.x, sb.y);
 
-        // 바닥 그림자
-        const shadowScale = Math.max(0.4, 1 - (FLOOR_Y - f.y) / 180);
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.48)';
+        const sg = ctx.createRadialGradient(0, 4, 4, 0, 4, 52);
+        sg.addColorStop(0, 'rgba(0,0,0,0.65)');
+        sg.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = sg;
         ctx.beginPath();
-        ctx.ellipse(0, FLOOR_Y - f.y + 4, 34 * shadowScale, 9 * shadowScale, 0, 0, Math.PI * 2);
+        ctx.ellipse(0, 4, 52, 12, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        if (f.action === 'ko') {
-          ctx.translate(0, -14);
-          ctx.rotate(-Math.PI / 2);
-        }
-
-        const crouchY = f.crouching ? 24 : 0;
-        const bob = f.action === 'idle' ? Math.sin(animTime * 6 + f.dir) * 3 : 0;
-        const poseLift = f.poseTimer > 0 ? Math.sin(animTime * 10) * 4 : 0;
-
-        // 뒷다리 & 앞다리 (3D 폴리곤 느낌의 각진 음영)
-        const kickExt = (f.action === 'kick') ? 46 : (f.action === 'special' ? 38 : 0);
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-
-        // 뒷다리
-        ctx.strokeStyle = tpl.pants;
-        ctx.lineWidth = 14;
+        ctx.fillStyle = '#451a03';
+        ctx.strokeStyle = '#090d16';
+        ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.moveTo(-10, -52 + crouchY);
-        ctx.lineTo(-18, -24 + crouchY * 0.4);
-        ctx.lineTo(-14, -4);
-        ctx.stroke();
-
-        // 앞다리 (킥 시 전방으로 쭉 뻗음!)
-        ctx.strokeStyle = tpl.pants;
-        ctx.lineWidth = 15;
-        ctx.beginPath();
-        ctx.moveTo(10, -52 + crouchY);
-        if (kickExt > 0) {
-          ctx.lineTo(36, -66 + crouchY);
-          ctx.lineTo(36 + kickExt, -72 + crouchY);
-        } else {
-          ctx.lineTo(18, -24 + crouchY * 0.4);
-          ctx.lineTo(20, -4);
-        }
-        ctx.stroke();
-
-        // 몸통 (상체 도복/재킷)
-        const torsoTop = -104 + crouchY + bob - poseLift;
-        const torsoGrad = ctx.createLinearGradient(-20, torsoTop, 20, torsoTop + 56);
-        torsoGrad.addColorStop(0, tpl.top);
-        torsoGrad.addColorStop(1, '#1e293b');
-        ctx.fillStyle = torsoGrad;
-        ctx.beginPath();
-        ctx.moveTo(-20, torsoTop);
-        ctx.lineTo(22, torsoTop);
-        ctx.lineTo(16, torsoTop + 54);
-        ctx.lineTo(-16, torsoTop + 54);
-        ctx.closePath();
+        ctx.roundRect(-38, -12, 76, 14, 5);
         ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.25)';
+        ctx.stroke();
+
+        ctx.fillStyle = '#78350f';
+        ctx.beginPath();
+        ctx.roundRect(-24, -22, 48, 12, 4);
+        ctx.fill();
+        ctx.stroke();
+
+        let tilt = 0;
+        if (sb.action === 'down') {
+          const e = Math.min(1, sb.koT / 0.2);
+          tilt = (Math.PI / 2.25) * e;
+        } else if (sb.action === 'wake') {
+          const e = Math.max(0, sb.actionTimer / 0.42);
+          tilt = (Math.PI / 2.25) * e;
+        } else if (sb.wobble > 0) {
+          tilt = Math.sin(animTime * 42) * sb.wobble * 0.28;
+        }
+
+        ctx.translate(0, -18);
+        ctx.rotate(tilt);
+
+        const woodGrad = ctx.createLinearGradient(-18, 0, 18, 0);
+        woodGrad.addColorStop(0, '#78350f');
+        woodGrad.addColorStop(0.45, '#b45309');
+        woodGrad.addColorStop(1, '#451a03');
+        ctx.fillStyle = woodGrad;
+        ctx.strokeStyle = '#090d16';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.roundRect(-14, -128, 28, 128, 6);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(69, 26, 3, 0.55)';
         ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(-5, -122); ctx.lineTo(-5, -8);
+        ctx.moveTo(6, -118); ctx.lineTo(6, -12);
         ctx.stroke();
 
-        // 허리띠
-        ctx.fillStyle = tpl.belt;
-        ctx.fillRect(-16, torsoTop + 44, 32, 7);
-
-        // 머리 & 머리띠
-        const headY = torsoTop - 18;
-        ctx.fillStyle = tpl.skin;
+        const bagGrad = ctx.createLinearGradient(-23, 0, 23, 0);
+        bagGrad.addColorStop(0, '#92400e');
+        bagGrad.addColorStop(0.35, '#d97706');
+        bagGrad.addColorStop(1, '#78350f');
+        ctx.fillStyle = bagGrad;
+        ctx.strokeStyle = '#090d16';
+        ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.arc(2, headY, 15, 0, Math.PI * 2);
+        ctx.roundRect(-22, -118, 44, 86, 12);
         ctx.fill();
-        // 머리카락
-        ctx.fillStyle = tpl.hair;
-        ctx.beginPath();
-        ctx.arc(2, headY - 4, 15, Math.PI, Math.PI * 2);
-        ctx.fill();
-        if (tpl.headband) {
-          ctx.fillStyle = tpl.headband;
-          ctx.fillRect(-13, headY - 9, 30, 5);
-        }
-        // 눈
-        ctx.fillStyle = '#0f172a';
-        ctx.fillRect(7, headY - 3, 5, 3);
-
-        // 팔 & 주먹 (펀치 / 가드 / 필살기 / 선택 포즈!)
-        const punchExt = f.action === 'punch' ? 48 : (f.action === 'special' ? 58 : 0);
-        ctx.strokeStyle = tpl.skin;
-        ctx.lineWidth = 11;
-        ctx.beginPath();
-        ctx.moveTo(10, torsoTop + 12);
-        if (f.guarding) {
-          ctx.lineTo(22, torsoTop + 2);
-          ctx.lineTo(18, torsoTop - 14);
-        } else if (f.poseTimer > 0) {
-          // 선택 화면 멋진 무술 포즈!
-          ctx.lineTo(28, torsoTop - 8);
-          ctx.lineTo(38, torsoTop - 26);
-        } else if (punchExt > 0) {
-          ctx.lineTo(24 + punchExt * 0.5, torsoTop + 10);
-          ctx.lineTo(26 + punchExt, torsoTop + 8);
-        } else {
-          ctx.lineTo(24, torsoTop + 20);
-          ctx.lineTo(30, torsoTop + 6);
-        }
         ctx.stroke();
 
-        // 필살기 또는 선택 포즈 이펙트
-        if (f.action === 'special') {
-          ctx.strokeStyle = tpl.aura;
-          ctx.lineWidth = 4;
-          ctx.shadowColor = tpl.aura; ctx.shadowBlur = 14;
+        ctx.fillStyle = '#fde68a';
+        ctx.strokeStyle = '#78350f';
+        ctx.lineWidth = 1.8;
+        [-106, -78, -48].forEach(ry => {
           ctx.beginPath();
-          ctx.arc(36, torsoTop + 12, 26, -0.9, 0.9);
+          ctx.roundRect(-24, ry, 48, 8, 3);
+          ctx.fill();
           ctx.stroke();
-          ctx.shadowBlur = 0;
-        } else if (f.poseTimer > 0) {
-          ctx.strokeStyle = tpl.aura;
-          ctx.lineWidth = 2.5;
-          ctx.globalAlpha = 0.7;
-          ctx.beginPath();
-          ctx.arc(0, torsoTop + 20, 46, 0, Math.PI * 2);
-          ctx.stroke();
-          ctx.globalAlpha = 1;
-        }
+        });
+
+        ctx.strokeStyle = '#fef08a';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(0, -64, 11, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(0, -64, 4.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#fde68a';
+        ctx.font = '900 11px "Noto Sans KR"';
+        ctx.textAlign = 'center';
+        ctx.strokeStyle = '#090d16';
+        ctx.lineWidth = 3;
+        ctx.strokeText('스킬 연습 샌드백', 0, -138);
+        ctx.fillText('스킬 연습 샌드백', 0, -138);
 
         ctx.restore();
       }
 
+      let jB = 1;
+      const jSh = (c, a) => {
+        const n = parseInt(c.slice(1), 16);
+        const k = v => Math.max(0, Math.min(255, v));
+        return `rgb(${k((n >> 16) + a)},${k(((n >> 8) & 255) + a)},${k((n & 255) + a)})`;
+      };
+      function jIk(x0, y0, x1, y1, l1, l2, bend) {
+        const dx = x1 - x0, dy = y1 - y0, full = Math.hypot(dx, dy) || 1;
+        const d = Math.min(full, l1 + l2 - 0.5), a = Math.atan2(dy, dx);
+        const c = Math.acos(Math.max(-1, Math.min(1, (l1 * l1 + d * d - l2 * l2) / (2 * l1 * d))));
+        return {
+          jx: x0 + Math.cos(a + bend * c) * l1,
+          jy: y0 + Math.sin(a + bend * c) * l1,
+          ex: x0 + Math.cos(a) * d,
+          ey: y0 + Math.sin(a) * d
+        };
+      }
+      function jLimb(x0, y0, x1, y1, r0, r1, c) {
+        r0 *= jB; r1 *= jB;
+        const a = Math.atan2(y1 - y0, x1 - x0), nx = -Math.sin(a), ny = Math.cos(a);
+        const g = ctx.createLinearGradient(x0 + nx * r0, y0 + ny * r0, x0 - nx * r0, y0 - ny * r0);
+        g.addColorStop(0, jSh(c, 70)); g.addColorStop(0.4, jSh(c, 5)); g.addColorStop(1, jSh(c, -65));
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.moveTo(x0 + nx * r0, y0 + ny * r0);
+        ctx.lineTo(x1 + nx * r1, y1 + ny * r1);
+        ctx.lineTo(x1 - nx * r1, y1 - ny * r1);
+        ctx.lineTo(x0 - nx * r0, y0 - ny * r0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath(); ctx.arc(x0, y0, r0, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(x1, y1, r1, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,.22)'; ctx.lineWidth = 1.4; ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(x0 + nx * r0 * .55, y0 + ny * r0 * .55);
+        ctx.lineTo(x1 + nx * r1 * .55, y1 + ny * r1 * .55);
+        ctx.stroke();
+      }
+
+      function drawPolygonFighter(f) {
+        if (f.isSandbag) {
+          drawWoodenSandbag(f);
+          return;
+        }
+        const tpl = FIGHTERS[f.id] || FIGHTERS.akira;
+        jB = tpl.bulk || 1;
+        const t = animTime, S = f.strong, A = f.action;
+        const K = A === 'skill' ? f.sk : null;
+        const M = K ? K.motion : null;
+
+        const isPunchSkill = K && K.button === 'punch';
+        const isKickSkill = K && K.button === 'kick';
+        const punching = A === 'punch' || isPunchSkill;
+        const kicking = A === 'kick' || isKickSkill;
+
+        const dur = f.actionDur || 0.3;
+        const p = (punching || kicking) ? 1 - Math.max(0, f.actionTimer) / dur : 0;
+        const ext = p < 0.25 ? -0.25 * (p / 0.25) : p < 0.55 ? -0.25 + 1.25 * ((p - 0.25) / 0.3) : 1 - (p - 0.55) / 0.45;
+        const air = f.y < FLOOR_Y - 6, gd = f.guarding, hit = A === 'hit', pose = f.poseTimer > 0;
+        const mv = f.moveDir && A === 'idle' && !air ? 1 : 0;
+
+        let hx = 0;
+        let hy = -66 + (f.crouching ? 24 : 0) + (A === 'idle' ? Math.sin(t * 7 + f.dir) * 2.2 : 0);
+        let lean = f.crouching ? 0.28 : 0.1;
+        let rf = [-22, 0], ff = [24, 0], kk = 0;
+        let bodySpinAngle = 0;
+
+        if (mv) {
+          const s = Math.sin(t * 12);
+          ff = [24 + s * 16, -Math.max(0, s) * 9];
+          rf = [-22 - s * 16, -Math.max(0, -s) * 9];
+        }
+        if (air) { ff = [20, -30]; rf = [-14, -22]; hy = -76; lean = 0.2; }
+        if (gd) { lean = -0.06; hy += 5; }
+        if (hit) { lean = -0.35; hx = -6; }
+        if (pose) { lean = 0.02; hy -= 3 + Math.sin(t * 10) * 2; }
+
+        if (punching && !M) {
+          lean = 0.1 + ext * 0.16;
+          hx = ext * (S ? 8 : 4);
+          if (S) ff = [24 + ext * 10, 0];
+        }
+        if (kicking && !M) {
+          kk = (ext + 0.25) / 1.25;
+          lean = 0.05 - kk * 0.3;
+          hx = -kk * 6;
+          ff = [14 + kk * (S ? 84 : 66), -22 - kk * (S ? 60 : 36)];
+          rf = [-20, 0];
+        }
+
+        if (M === 'tetsuzanko') {
+          lean = 0.42; hx = 14 * Math.max(0, ext); hy += 8; ff = [36, 0]; rf = [-32, 0];
+        } else if (M === 'flying_kick') {
+          lean = -0.52; hx = -10; hy = -82; ff = [96, -74]; rf = [58, -56];
+        } else if (M === 'somersault') {
+          bodySpinAngle = -p * Math.PI * 2; hy = -86; ff = [78, -92]; rf = [-18, -36];
+        } else if (M === 'lariat_slam') {
+          lean = -0.15 + p * 0.65; hx = 10 * Math.max(0, ext); ff = [32, 0]; rf = [-28, 0];
+        } else if (M === 'rising_knee') {
+          lean = -0.22; hy = -84; ff = [48, -96]; rf = [-14, -24];
+        } else if (M === 'tiger_palm') {
+          lean = 0.26; hx = 10 * Math.max(0, ext); ff = [30, 0]; rf = [-24, 0];
+        }
+
+        const sx = hx + 3 * Math.cos(lean) + 42 * Math.sin(lean);
+        const sy = hy + 3 * Math.sin(lean) - 42 * Math.cos(lean);
+        let fh = [sx + 30, sy - 4], rh = [sx + 17, sy + 4];
+
+        if (gd) { fh = [sx + 24, sy - 20]; rh = [sx + 15, sy - 10]; }
+        if (hit) { fh = [sx - 8, sy + 26]; rh = [sx - 14, sy + 16]; }
+        if (air) { fh = [sx + 26, sy + 2]; rh = [sx + 12, sy + 8]; }
+        if (pose) { fh = [sx + 34, sy - 30]; rh = [sx + 20, sy - 24]; }
+
+        if (punching && !M) {
+          const L = ext * (S ? 58 : 48);
+          if (S) { rh = [sx + 26 + L, sy + 2]; fh = [sx + 22, sy - 8]; }
+          else { fh = [sx + 30 + L, sy + 1]; }
+        }
+        if (kicking && !M) {
+          fh = [sx + 22, sy - 14];
+          rh = [sx + 8, sy + 8 - kk * 6];
+        }
+
+        if (M === 'tetsuzanko') {
+          fh = [sx + 48, sy + 6]; rh = [sx - 24, sy - 12];
+        } else if (M === 'flying_kick' || M === 'somersault' || M === 'rising_knee') {
+          fh = [sx + 16, sy - 24]; rh = [sx - 18, sy + 6];
+        } else if (M === 'lariat_slam') {
+          const swingY = -36 + p * 74;
+          fh = [sx + 54, sy + swingY]; rh = [sx + 48, sy + swingY + 8];
+        } else if (M === 'tiger_palm') {
+          const alt = Math.sin(p * Math.PI * 4) * 14;
+          fh = [sx + 52 + alt, sy - 6]; rh = [sx + 52 - alt, sy + 10];
+        }
+
+        ctx.save();
+        ctx.translate(f.x, f.y);
+        ctx.scale(f.dir * 0.95 * (tpl.h || 1), 0.95 * (tpl.h || 1));
+
+        const ss = Math.max(0.4, 1 - (FLOOR_Y - f.y) / 180);
+        const sg = ctx.createRadialGradient(0, FLOOR_Y - f.y + 4, 2, 0, FLOOR_Y - f.y + 4, 44 * ss);
+        sg.addColorStop(0, 'rgba(0,0,0,.6)');
+        sg.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = sg;
+        ctx.beginPath();
+        ctx.ellipse(0, FLOOR_Y - f.y + 4, 44 * ss, 10 * ss, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 가드 중일 때 방어 실드 글로우 표시
+        if (gd) {
+          ctx.save();
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.7)';
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.14)';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.arc(24, -64, 34, -Math.PI * 0.45, Math.PI * 0.45);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        if (K) {
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          const auraGrad = ctx.createRadialGradient(0, -60, 8, 0, -60, 78);
+          auraGrad.addColorStop(0, tpl.aura);
+          auraGrad.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = auraGrad;
+          ctx.beginPath();
+          ctx.arc(0, -60, 78, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        if (A === 'ko' || A === 'down' || A === 'wake') {
+          const e = A === 'wake' ? Math.max(0, f.actionTimer / 0.42) : Math.min(1, f.koT / 0.25);
+          ctx.translate(0, -14 * e);
+          ctx.rotate((-Math.PI / 2) * (1 - Math.pow(1 - e, 3)));
+        }
+
+        if (bodySpinAngle !== 0) {
+          ctx.translate(0, -65);
+          ctx.rotate(bodySpinAngle);
+          ctx.translate(0, 65);
+        }
+
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        const leg = (fx, fy, dk) => {
+          const k = jIk(hx, hy, fx, fy - 6, 37, 39, -1), P = jSh(tpl.pants, dk);
+          jLimb(hx, hy, k.jx, k.jy, 11.5, 9, P);
+          jLimb(k.jx, k.jy, k.ex, k.ey, 9, 6.4, P);
+          ctx.strokeStyle = jSh(tpl.trim, dk);
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          ctx.moveTo(hx - 3, hy + 2);
+          ctx.lineTo(k.jx - 3, k.jy);
+          ctx.lineTo(k.ex - 2, k.ey);
+          ctx.stroke();
+          const a = (kicking && fx === ff[0]) ? Math.atan2(k.ey - k.jy, k.ex - k.jx) : 0.1;
+          jLimb(k.ex, k.ey, k.ex + Math.cos(a) * 17, k.ey + Math.sin(a) * 17, 6.8, 5.2, jSh(tpl.shoe, dk));
+          ctx.fillStyle = jSh(tpl.trim, dk);
+          ctx.beginPath();
+          ctx.arc(k.ex + Math.cos(a) * 17, k.ey + Math.sin(a) * 17, 4.6, 0, Math.PI * 2);
+          ctx.fill();
+        };
+
+        const arm = (h, dk) => {
+          const k = jIk(sx, sy, h[0], h[1], 27, 28, 1), sk = jSh(tpl.skin, dk);
+          jLimb(sx, sy, k.jx, k.jy, 8.4, 7, tpl.sleeve ? jSh(tpl.sleeve, dk) : sk);
+          jLimb(k.jx, k.jy, k.ex, k.ey, 6.8, 5.8, sk);
+          const gx = k.ex + (k.ex - k.jx) * 0.2, gy = k.ey + (k.ey - k.jy) * 0.2;
+          jLimb(k.ex, k.ey, gx, gy, 7.6, 7, jSh(tpl.glove, dk));
+          ctx.fillStyle = jSh('#e5e7eb', dk);
+          ctx.beginPath();
+          ctx.arc(gx, gy, 2.6, 0, Math.PI * 2);
+          ctx.fill();
+        };
+
+        leg(rf[0], rf[1], -38);
+        if (!(punching && S) && M !== 'lariat_slam' && M !== 'tiger_palm') arm(rh, -38);
+
+        ctx.save();
+        ctx.translate(hx, hy);
+        ctx.rotate(lean);
+        let g = ctx.createLinearGradient(-16, 0, 20, 0);
+        g.addColorStop(0, jSh(tpl.top, -70));
+        g.addColorStop(0.5, tpl.top);
+        g.addColorStop(1, jSh(tpl.top, 60));
+
+        ctx.save();
+        ctx.scale(jB, 1);
+        ctx.fillStyle = tpl.pants;
+        ctx.beginPath(); ctx.moveTo(-13, 4); ctx.lineTo(13, 4); ctx.lineTo(14, -8); ctx.lineTo(-14, -8); ctx.fill();
+        ctx.fillStyle = tpl.belt;
+        ctx.fillRect(-14, -9, 28, 4);
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.moveTo(-14, -6); ctx.lineTo(14, -6); ctx.lineTo(20, -36); ctx.quadraticCurveTo(4, -46, -16, -38);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = tpl.stripe || 'rgba(0,0,0,.12)';
+        ctx.beginPath(); ctx.moveTo(-15, -24); ctx.lineTo(17, -24); ctx.lineTo(18, -29); ctx.lineTo(-15, -30); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,.16)';
+        ctx.beginPath(); ctx.moveTo(4, -12); ctx.lineTo(15, -14); ctx.lineTo(18, -34); ctx.lineTo(8, -36); ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,.35)';
+        ctx.lineWidth = 1.3;
+        ctx.beginPath(); ctx.moveTo(3, -8); ctx.lineTo(4, -38); ctx.stroke();
+        if (tpl.body === 'gi') {
+          ctx.strokeStyle = 'rgba(0,0,0,.4)';
+          ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(-4, -42); ctx.lineTo(6, -22); ctx.lineTo(15, -40); ctx.stroke();
+        }
+        ctx.restore();
+
+        ctx.fillStyle = jSh(tpl.skin, -10);
+        ctx.fillRect(-1, -52, 10, 12);
+        const hg = ctx.createRadialGradient(8, -66, 2, 5, -62, 18);
+        hg.addColorStop(0, jSh(tpl.skin, 25));
+        hg.addColorStop(1, jSh(tpl.skin, -35));
+        ctx.fillStyle = hg;
+        ctx.beginPath();
+        ctx.moveTo(-6, -64); ctx.quadraticCurveTo(-6, -80, 6, -79); ctx.quadraticCurveTo(18, -77, 18, -64);
+        ctx.lineTo(19, -60); ctx.lineTo(15, -56); ctx.quadraticCurveTo(10, -50, 3, -52); ctx.quadraticCurveTo(-6, -54, -6, -64);
+        ctx.fill();
+
+        const HS = {
+          spike: [[-14,-82],[-6,-90],[4,-96],[14,-92],[21,-82],[19,-72]],
+          short: [[-12,-78],[-4,-87],[8,-88],[17,-82],[19,-70]],
+          ponytail: [[-12,-78],[-3,-88],[9,-88],[18,-80],[18,-70]],
+          long: [[-15,-78],[-6,-90],[8,-92],[19,-82],[21,-68]]
+        };
+        const sway = Math.sin(t * 6) * 4;
+        ctx.fillStyle = tpl.hair;
+        if (tpl.hairStyle === 'ponytail') {
+          ctx.beginPath(); ctx.moveTo(-8, -78); ctx.quadraticCurveTo(-30, -74 + sway, -26, -46 + sway); ctx.quadraticCurveTo(-14, -62, -4, -70); ctx.fill();
+        }
+        if (tpl.hairStyle === 'long') {
+          ctx.beginPath(); ctx.moveTo(-8, -80); ctx.quadraticCurveTo(-30, -70 + sway, -24, -40 + sway); ctx.quadraticCurveTo(-8, -52, -2, -66); ctx.fill();
+        }
+        ctx.beginPath();
+        ctx.moveTo(-9, -66);
+        HS[tpl.hairStyle || 'short'].forEach(q => ctx.lineTo(q[0], q[1]));
+        ctx.lineTo(13, -74); ctx.lineTo(4, -72); ctx.lineTo(-4, -70);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = jSh(tpl.hair, 55);
+        ctx.beginPath(); ctx.moveTo(-4, -86); ctx.lineTo(4, -92); ctx.lineTo(10, -87); ctx.lineTo(2, -83); ctx.fill();
+        if (tpl.headband) {
+          ctx.fillStyle = tpl.headband;
+          ctx.fillRect(-7, -76, 26, 4.5);
+          ctx.beginPath(); ctx.moveTo(-7, -74); ctx.lineTo(-22, -70 + sway); ctx.lineTo(-20, -76 + sway); ctx.lineTo(-7, -76); ctx.fill();
+        }
+        ctx.fillStyle = '#fff'; ctx.fillRect(10, -67, 5, 3);
+        ctx.fillStyle = '#0f172a'; ctx.fillRect(12.5, -67, 2.5, 3); ctx.fillRect(9, -71, 7, 1.8);
+        ctx.strokeStyle = '#7c2d12'; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.moveTo(11, -57); ctx.lineTo(16, -58); ctx.stroke();
+        ctx.restore();
+
+        leg(ff[0], ff[1], 0);
+        if ((punching && S) || M === 'lariat_slam' || M === 'tiger_palm') arm(rh, 0);
+        arm(fh, 0);
+
+        if (((punching || kicking) && ext > 0.45) || K) {
+          ctx.save();
+          ctx.globalCompositeOperation = 'lighter';
+          ctx.strokeStyle = K ? tpl.aura : 'rgba(255,220,140,.5)';
+          ctx.globalAlpha = K ? 0.75 : 1;
+          ctx.lineWidth = K ? 18 : 9;
+          const e = kicking ? ff : (S ? rh : fh);
+          const o = kicking ? [hx, hy] : [sx + 4, sy];
+          ctx.beginPath();
+          ctx.moveTo(o[0], o[1]);
+          ctx.lineTo(e[0] + 10, e[1] - 4);
+          ctx.stroke();
+          ctx.restore();
+        }
+        ctx.restore();
+      }
+
       function drawArena() {
-        // 나이트파이터 스타일 하늘 & 원경 빌딩 실루엣
+        const themeIdx = phase === 'select' ? 1 : Math.min(5, Math.max(1, arcadeStage));
+        const th = STAGE_THEMES[themeIdx] || STAGE_THEMES[1];
+
         const sky = ctx.createLinearGradient(0, 0, 0, FLOOR_Y);
-        sky.addColorStop(0, '#0f172a');
-        sky.addColorStop(0.55, '#1e3a8a');
-        sky.addColorStop(1, '#f97316');
+        sky.addColorStop(0, th.skyTop);
+        sky.addColorStop(0.55, th.skyMid);
+        sky.addColorStop(1, th.skyBot);
         ctx.fillStyle = sky;
         ctx.fillRect(0, 0, ARENA_W, ARENA_H);
 
-        // 원경 도시 실루엣
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.65)';
         for (let bx = 20; bx < ARENA_W; bx += 75) {
           const bh = 65 + ((bx * 37) % 85);
           ctx.fillRect(bx, FLOOR_Y - 35 - bh, 52, bh + 35);
         }
 
-        // 3D 원근 링 바닥 (사다리꼴 데크 — 양끝은 링아웃 심연!)
         const ringGrad = ctx.createLinearGradient(0, FLOOR_Y - 35, 0, ARENA_H);
-        ringGrad.addColorStop(0, '#475569');
-        ringGrad.addColorStop(0.3, '#334155');
-        ringGrad.addColorStop(1, '#0f172a');
+        ringGrad.addColorStop(0, th.deckTop);
+        ringGrad.addColorStop(0.35, th.deckMid);
+        ringGrad.addColorStop(1, th.deckBot);
         ctx.fillStyle = ringGrad;
         ctx.beginPath();
         ctx.moveTo(RING_LEFT + 35, FLOOR_Y - 36);
@@ -924,8 +1395,7 @@
         ctx.closePath();
         ctx.fill();
 
-        // 노랑/검정 위험 링 경계선 (링아웃 라인)
-        ctx.strokeStyle = '#fbbf24';
+        ctx.strokeStyle = th.border;
         ctx.lineWidth = 4;
         ctx.beginPath();
         ctx.moveTo(RING_LEFT + 35, FLOOR_Y - 36);
@@ -934,7 +1404,6 @@
         ctx.lineTo(RING_RIGHT + 20, ARENA_H);
         ctx.stroke();
 
-        // 바닥 격자
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
         ctx.lineWidth = 1.5;
         for (let gx = RING_LEFT + 60; gx < RING_RIGHT - 40; gx += 75) {
@@ -946,47 +1415,192 @@
       }
 
       // ==========================================
-      // 6. 전투 판정 & AI & 라운드 관리
+      // 7. 전투 판정 (모든 스킬 가드 가능, 기상 무적, 콤보 & 히트스톱)
       // ==========================================
-      function triggerFighterAction(attacker, defender, act) {
-        if (phase !== 'fight' || attacker.action === 'ko' || attacker.action === 'hit') return;
-        if (attacker.action !== 'idle') return;
-        if (act === 'special' && attacker.specialCd > 0) return;
+      let p1CalloutTimer = null;
+      let p2CalloutTimer = null;
 
+      function showSkillCallout(fighter, skillName) {
+        const isP1 = (fighter === f1);
+        const el = document.getElementById(isP1 ? 'p1SkillCallout' : 'p2SkillCallout');
+        if (!el) return;
+        const tpl = FIGHTERS[fighter.id] || FIGHTERS.akira;
+        const isArm = tpl.skill.button === 'punch';
+
+        el.textContent = `⚡ ${skillName}`;
+        el.style.borderColor = tpl.aura;
+        el.className = `px-3 py-1 rounded-lg bg-slate-950/90 border-2 text-xs sm:text-sm font-black ${isArm ? 'text-sky-300' : 'text-amber-300'} tracking-wide shadow-lg skill-callout-anim`;
+        el.classList.remove('hidden');
+
+        void el.offsetWidth;
+        el.classList.add('skill-callout-anim');
+
+        if (isP1) {
+          if (p1CalloutTimer) clearTimeout(p1CalloutTimer);
+          p1CalloutTimer = setTimeout(() => el.classList.add('hidden'), 900);
+        } else {
+          if (p2CalloutTimer) clearTimeout(p2CalloutTimer);
+          p2CalloutTimer = setTimeout(() => el.classList.add('hidden'), 900);
+        }
+      }
+
+      function registerCombo(attacker) {
+        attacker.comboCount = (attacker.comboCount || 0) + 1;
+        attacker.comboTimer = 1.4;
+        const badge = document.getElementById(attacker === f1 ? 'p1ComboBadge' : 'p2ComboBadge');
+        if (badge && attacker.comboCount >= 2) {
+          badge.textContent = `${attacker.comboCount} HITS!`;
+          badge.classList.remove('hidden');
+        }
+      }
+
+      function checkCommandInput(f, btnType) {
+        const recent = f.cmd.filter(c => animTime - c.t <= 1.2);
+        const seq = recent.map(c => c.tok).join('');
+        let idxB = seq.indexOf('B');
+        let idxD = idxB >= 0 ? seq.indexOf('D', idxB + 1) : -1;
+        let idxF = idxD >= 0 ? seq.indexOf('F', idxD + 1) : -1;
+        if (idxB >= 0 && idxD > idxB && idxF > idxD) {
+          const sk = FIGHTERS[f.id].skill;
+          if (sk && sk.button === btnType) {
+            f.cmd = [];
+            return true;
+          }
+        }
+        return false;
+      }
+
+      function canControlPlayer() {
+        return phase === 'fight' || phase === 'select';
+      }
+
+      function triggerFighterAction(attacker, defender, act, strong = false) {
+        if (!canControlPlayer() || attacker.action !== 'idle') return;
+
+        if (strong && checkCommandInput(attacker, act)) {
+          triggerSkill(attacker);
+          return;
+        }
+
+        const D = { punch: [0.19, 0.32], kick: [0.26, 0.42] }[act];
+        if (!D) return;
         attacker.action = act;
+        attacker.strong = strong;
         attacker.hitApplied = false;
-        attacker.actionTimer = act === 'punch' ? 0.24 : act === 'kick' ? 0.34 : 0.45;
-        if (act === 'special') attacker.specialCd = state.isVip && attacker === f1 ? 2.5 : 4.0;
+        attacker.atkId++;
+        attacker.actionDur = attacker.actionTimer = D[strong ? 1 : 0];
+        attacker.guarding = false;
+      }
+
+      function triggerSkill(f) {
+        if (!canControlPlayer() || f.action !== 'idle') return;
+        const sk = FIGHTERS[f.id].skill;
+        f.action = 'skill';
+        f.sk = sk;
+        f.strong = true;
+        f.hitApplied = false;
+        f.atkId++;
+        f.guarding = false;
+        f.actionDur = f.actionTimer = sk.dur;
+        f.skillCd = 0;
+        f.vx = f.dir * sk.lunge;
+        if (sk.vy) f.vy = sk.vy;
+        playSfx('skill');
+        screenShake = 5;
+        showSkillCallout(f, sk.name);
       }
 
       function checkMeleeHit(attacker, defender) {
-        if (attacker.hitApplied) return;
-        const reach = attacker.action === 'punch' ? 88 : attacker.action === 'kick' ? 105 : 120;
-        const dist = Math.abs(defender.x - attacker.x);
-        const yDiff = Math.abs(defender.y - attacker.y);
-        if (dist <= reach && yDiff < 55 && Math.sign(defender.x - attacker.x) === attacker.dir) {
-          attacker.hitApplied = true;
-          const baseDmg = attacker.action === 'punch' ? 8 : attacker.action === 'kick' ? 13 : 22;
-          let dmg = baseDmg * attacker.power * (state.isVip && attacker === f1 ? 1.15 : 1);
-          const push = attacker.action === 'special' ? 70 : attacker.action === 'kick' ? 42 : 24;
+        // 다운, 기상(무적), KO 중에는 중복 피격 방지
+        if (attacker.hitApplied || defender.action === 'down' || defender.action === 'wake' || defender.action === 'ko') return;
+        const S = attacker.strong;
+        const K = attacker.action === 'skill' ? attacker.sk : null;
+        const P = K ? (K.button === 'punch') : (attacker.action === 'punch');
 
-          if (defender.guarding) {
-            dmg *= 0.22;
-            defender.vx = attacker.dir * push * 2.5;
-            playSfx('guard');
+        const reach = K ? K.reach : P ? (S ? 96 : 84) : (S ? 120 : 102);
+        const dist = Math.abs(defender.x - attacker.x);
+        if (dist > reach || Math.abs(defender.y - attacker.y) >= 75 || Math.sign(defender.x - attacker.x) !== attacker.dir) return;
+
+        attacker.hitApplied = true;
+        const base = K ? K.dmg : P ? (S ? 10 : 5) : (S ? 15 : 8);
+        const push = K ? 58 : P ? (S ? 30 : 16) : (S ? 62 : 30);
+        let dmg = base * attacker.power * (state.isVip && attacker === f1 ? 1.15 : 1);
+
+        // 대기실 나무 샌드백 피격 처리
+        if (defender.isSandbag) {
+          defender.wobble = K ? 1.4 : (S ? 1.0 : 0.6);
+          registerCombo(attacker);
+          if (K) {
+            defender.action = 'down';
+            defender.actionTimer = 0.85;
+            defender.koT = 0;
+            hitstopTimer = 0.045;
+            screenShake = 10;
+            playSfx('down');
           } else {
             defender.action = 'hit';
             defender.actionTimer = 0.22;
-            defender.vx = attacker.dir * push * 4;
             playSfx('hit');
           }
-          defender.hp = Math.max(0, defender.hp - dmg);
-          hitSparks.push({ x: (attacker.x + defender.x) / 2, y: defender.y - 68, r: 10, maxR: 48, color: defender.guarding ? '#38bdf8' : '#fde047', life: 0.3 });
+          hitSparks.push({
+            x: defender.x - 16,
+            y: defender.y - 78,
+            r: 10,
+            maxR: K ? 82 : S ? 56 : 40,
+            color: K ? '#f43f5e' : '#fde047',
+            life: 0.34
+          });
+          return;
+        }
 
-          if (defender.hp <= 0) {
-            defender.action = 'ko';
-            finishRound(attacker === f1 ? 1 : 2, 'K.O.!');
+        // 모든 공격과 스킬은 가드 가능!
+        if (defender.guarding) {
+          dmg *= K ? 0.22 : 0.15;
+          defender.vx = attacker.dir * push * 2.5;
+          attacker.vx = -attacker.dir * push * 1.1;
+          playSfx('guard');
+          floatingLabels.push({
+            x: defender.x,
+            y: defender.y - 115,
+            text: '🛡️ GUARD!',
+            color: '#38bdf8',
+            life: 0.65
+          });
+        } else {
+          registerCombo(attacker);
+          if (K) {
+            defender.action = 'down';
+            defender.actionTimer = 1.1;
+            defender.koT = 0;
+            defender.vx = attacker.dir * 350;
+            defender.vy = -175;
+            defender.guarding = false;
+            hitstopTimer = 0.045;
+            screenShake = 10;
+            playSfx('down');
+          } else {
+            defender.action = 'hit';
+            defender.actionTimer = S ? 0.30 : 0.19;
+            defender.vx = attacker.dir * push * 4.0;
+            if (S) hitstopTimer = 0.025;
+            playSfx('hit');
           }
+        }
+
+        defender.hp = Math.max(0, defender.hp - dmg);
+        hitSparks.push({
+          x: (attacker.x + defender.x) / 2,
+          y: defender.y - 68,
+          r: 10,
+          maxR: defender.guarding ? 64 : (K ? 82 : S ? 56 : 40),
+          color: defender.guarding ? '#38bdf8' : (K ? '#f43f5e' : '#fde047'),
+          life: 0.34
+        });
+
+        if (defender.hp <= 0) {
+          defender.action = 'ko';
+          defender.koT = 0;
+          finishRound(attacker === f1 ? 1 : 2, 'K.O.!');
         }
       }
 
@@ -997,11 +1611,22 @@
         if (ms > 0) setTimeout(() => { b.classList.add('hidden'); b.classList.remove('flex'); }, ms);
       }
 
-      function startFight(mode) {
-        p1Rounds = 0; p2Rounds = 0;
+      function startFight(mode, resetArcade = true) {
+        currentMode = mode;
+        p1Rounds = 0;
+        p2Rounds = 0;
+
+        if (mode === 'practice') {
+          if (resetArcade) {
+            arcadeStage = 1;
+            const others = Object.keys(FIGHTERS).filter(id => id !== state.p1Id);
+            arcadeQueue = shuffleArray(others);
+          }
+          state.p2Id = arcadeQueue[arcadeStage - 1] || 'pai';
+        }
+
         document.getElementById('charSelectPanel').classList.add('hidden');
-        document.getElementById('arcadeControlsPanel').classList.remove('hidden');
-        document.getElementById('arcadeControlsPanel').classList.add('flex');
+        document.getElementById('abortFightBtn').classList.remove('hidden');
         document.getElementById('matchResultBanner').classList.add('hidden');
         document.getElementById('matchResultBanner').classList.remove('flex');
         if (state.bgmEnabled) startBGM();
@@ -1013,52 +1638,130 @@
         f2 = createFighter(state.p2Id, -1);
         roundTimer = 60;
         phase = 'countdown';
-        showBanner(`ROUND ${num}`, 900);
+        updateSelectUi();
+
+        const stageHeader = currentMode === 'practice'
+          ? `STAGE ${arcadeStage} · VS ${FIGHTERS[state.p2Id].name}\nROUND ${num}`
+          : `ROUND ${num}`;
+        showBanner(stageHeader, 1050);
+
         setTimeout(() => {
           if (phase !== 'countdown') return;
           phase = 'fight';
           showBanner('FIGHT!', 700);
-        }, 950);
+        }, 1100);
       }
 
       function finishRound(winnerNum, reasonText) {
         if (phase !== 'fight') return;
         phase = 'roundEnd';
         playSfx('ko');
-        showBanner(reasonText, 1600);
+        showBanner(reasonText, 1500);
         if (winnerNum === 1) p1Rounds++; else p2Rounds++;
 
         setTimeout(() => {
           if (p1Rounds >= 2 || p2Rounds >= 2) {
             phase = 'matchEnd';
             const iWon = p1Rounds >= 2;
-            if (iWon) state.wins++; else state.losses++;
-            saveState(true);
-            updateSelectUi();
-            document.getElementById('matchWinnerTitle').textContent = iWon ? `🏆 1P ${FIGHTERS[state.p1Id].name} WIN!` : `💀 2P ${FIGHTERS[state.p2Id].name} WIN!`;
-            document.getElementById('matchResultSub').textContent = reasonText === 'RING OUT!' ? '상대를 링 밖으로 날려버렸습니다!' : '압도적인 K.O. 승리입니다!';
+            const rematchBtn = document.getElementById('rematchBtn');
+
+            if (currentMode === 'practice') {
+              if (iWon) {
+                state.wins++;
+                saveState(true);
+                updateSelectUi();
+
+                if (arcadeStage < TOTAL_STAGES) {
+                  const nextOpponent = FIGHTERS[arcadeQueue[arcadeStage]]?.name || '다음 파이터';
+                  document.getElementById('matchWinnerTitle').textContent = `🎉 STAGE ${arcadeStage} CLEAR!`;
+                  document.getElementById('matchResultSub').textContent = `${FIGHTERS[state.p2Id].name} 격파! 다음 상대: STAGE ${arcadeStage + 1} [${nextOpponent}]`;
+                  rematchBtn.textContent = `▶ STAGE ${arcadeStage + 1} 도전`;
+                  rematchBtn.dataset.nextAction = 'next_stage';
+                } else {
+                  playSfx('champion');
+                  document.getElementById('matchWinnerTitle').textContent = '🏆 최종 우승!!';
+                  document.getElementById('matchResultSub').textContent = `축하합니다! ${FIGHTERS[state.p1Id].name}(으)로 모든 파이터를 물리치고 챔피언에 등극했습니다!`;
+                  rematchBtn.textContent = '🔄 처음부터 다시 우승 도전';
+                  rematchBtn.dataset.nextAction = 'restart_arcade';
+                }
+              } else {
+                state.losses++;
+                saveState(true);
+                updateSelectUi();
+                document.getElementById('matchWinnerTitle').textContent = `💀 STAGE ${arcadeStage} 패배...`;
+                document.getElementById('matchResultSub').textContent = `${FIGHTERS[state.p2Id].name}에게 패배했습니다. 다시 도전할까요?`;
+                rematchBtn.textContent = `🔄 STAGE ${arcadeStage} 재도전`;
+                rematchBtn.dataset.nextAction = 'retry_stage';
+              }
+            } else {
+              if (iWon) state.wins++; else state.losses++;
+              saveState(true);
+              updateSelectUi();
+              document.getElementById('matchWinnerTitle').textContent = iWon ? `🏆 1P ${FIGHTERS[state.p1Id].name} WIN!` : `💀 2P ${FIGHTERS[state.p2Id].name} WIN!`;
+              document.getElementById('matchResultSub').textContent = reasonText === 'RING OUT!' ? '상대를 링 밖으로 날려버렸습니다!' : '압도적인 K.O. 승리입니다!';
+              rematchBtn.textContent = '🔄 재대결';
+              rematchBtn.dataset.nextAction = 'pvp_rematch';
+            }
+
             document.getElementById('matchResultBanner').classList.remove('hidden');
             document.getElementById('matchResultBanner').classList.add('flex');
           } else {
             startRound(p1Rounds + p2Rounds + 1);
           }
-        }, 1700);
+        }, 1600);
       }
 
       function updateFighterPhysics(f, opp, dt) {
         if (f.poseTimer > 0) f.poseTimer = Math.max(0, f.poseTimer - dt);
-        if (f.specialCd > 0) f.specialCd = Math.max(0, f.specialCd - dt);
-        if (f.action !== 'idle' && f.action !== 'ko') {
-          f.actionTimer -= dt;
-          if (['punch', 'kick', 'special'].includes(f.action) && f.actionTimer < 0.16) {
-            checkMeleeHit(f, opp);
+        if (f.wobble > 0) f.wobble = Math.max(0, f.wobble - dt * 2.4);
+        if (f.action === 'ko' || f.action === 'down') f.koT += dt;
+        if (f.comboTimer > 0) {
+          f.comboTimer -= dt;
+          if (f.comboTimer <= 0) {
+            f.comboCount = 0;
+            const badge = document.getElementById(f === f1 ? 'p1ComboBadge' : 'p2ComboBadge');
+            if (badge) badge.classList.add('hidden');
           }
-          if (f.actionTimer <= 0) f.action = 'idle';
+        }
+        f.skillCd = 0;
+
+        if (f.isSandbag) {
+          f.x = SANDBAG_HOME_X;
+          f.y = FLOOR_Y;
+          f.vx = 0;
+          f.vy = 0;
+          if (f.action !== 'idle') {
+            f.actionTimer -= dt;
+            if (f.actionTimer <= 0) {
+              if (f.action === 'down') {
+                f.action = 'wake';
+                f.actionTimer = 0.42;
+              } else {
+                f.action = 'idle';
+              }
+            }
+          }
+          return;
         }
 
-        // 이동 및 중력
-        if (f.action === 'idle' && !f.guarding && !f.crouching) {
-          f.x += f.moveDir * f.speed * dt;
+        if (f.action !== 'idle' && f.action !== 'ko') {
+          f.actionTimer -= dt;
+          if ((f.action === 'punch' || f.action === 'kick' || f.action === 'skill') && f.actionTimer < f.actionDur * 0.65) {
+            checkMeleeHit(f, opp);
+          }
+          if (f.actionTimer <= 0) {
+            if (f.action === 'down') {
+              f.action = 'wake';
+              f.actionTimer = 0.42;
+            } else {
+              f.action = 'idle';
+              f.sk = null;
+            }
+          }
+        }
+
+        if (f.action === 'idle' && !f.crouching && (!f.guarding || f.backGuard)) {
+          f.x += f.moveDir * f.speed * (f.guarding ? 0.4 : 1) * dt;
         }
         f.x += f.vx * dt;
         f.vx *= Math.pow(0.05, dt);
@@ -1066,36 +1769,77 @@
         if (f.y < FLOOR_Y || f.vy < 0) {
           f.vy += 1250 * dt;
           f.y += f.vy * dt;
-          if (f.y >= FLOOR_Y && !f.ringOut) { f.y = FLOOR_Y; f.vy = 0; }
+          if (f.y >= FLOOR_Y && !f.ringOut) {
+            f.y = FLOOR_Y;
+            f.vy = 0;
+          }
         }
+        if (f.action === 'idle' && opp) f.dir = opp.x >= f.x ? 1 : -1;
 
-        // 방향 자동 맞춤
-        if (f.action === 'idle' && opp) {
-          f.dir = opp.x >= f.x ? 1 : -1;
-        }
-
-        // 링아웃 체크!
-        if (phase === 'fight' && (f.x < RING_LEFT || f.x > RING_RIGHT)) {
+        if (phase === 'select') {
+          f.x = Math.max(RING_LEFT + 20, Math.min(RING_RIGHT - 20, f.x));
+        } else if (phase === 'fight' && (f.x < RING_LEFT || f.x > RING_RIGHT)) {
           f.ringOut = true;
           f.vy = 260;
           finishRound(f === f1 ? 2 : 1, 'RING OUT!');
         }
       }
 
+      // 개선된 AI: 플레이어 공격/스킬 발동 즉시 반응하여 적절히 가드 + 막아낸 직후 반격
       function updateAi(dt) {
-        if (phase !== 'fight' || f2.action === 'ko') return;
+        if (phase !== 'fight' || f2.isSandbag || f2.action === 'ko' || f2.action === 'down' || f2.action === 'wake') return;
+        const lv = Math.max(1, arcadeStage); // 1 ~ 5
+        const a = f2.ai || (f2.ai = { cd: 1.1, gt: 0, seen: 0, hold: 0, punishReady: false });
         const dist = Math.abs(f1.x - f2.x);
-        f2.guarding = f1.action !== 'idle' && dist < 110 && Math.random() < 0.38;
-        if (dist > 82) {
-          f2.moveDir = f1.x < f2.x ? -1 : 1;
-        } else {
-          f2.moveDir = 0;
-          if (f2.action === 'idle' && !f2.guarding) {
-            const r = Math.random();
-            if (f2.specialCd <= 0 && r < 0.04) triggerFighterAction(f2, f1, 'special');
-            else if (r < 0.08) triggerFighterAction(f2, f1, 'kick');
-            else if (r < 0.15) triggerFighterAction(f2, f1, 'punch');
+        a.cd -= dt; a.gt -= dt; a.hold -= dt;
+
+        // 1. 플레이어가 새로운 공격/스킬을 시작하면 즉각 가드 판단
+        if (f1.atkId !== a.seen && f1.action !== 'idle') {
+          a.seen = f1.atkId;
+          const isSkillAtk = (f1.action === 'skill');
+          // STAGE 1: 기본 38% (스킬 50%) ~ STAGE 5: 기본 66% (스킬 78%)
+          const guardProb = Math.min(0.80, (isSkillAtk ? 0.42 : 0.30) + lv * 0.075);
+          if (dist < 165 && Math.random() < guardProb) {
+            a.gt = isSkillAtk ? 0.55 : 0.38;
+            a.punishReady = true; // 가드 성공 후 반격 플래그
           }
+        }
+
+        // 공격 중이 아닐 때 가드 상태 유지
+        f2.guarding = (a.gt > 0 && f2.action === 'idle');
+
+        // 2. 가드가 끝난 직후 반격 찬스 실행
+        if (!f2.guarding && a.punishReady && f2.action === 'idle' && dist < 120) {
+          a.punishReady = false;
+          if (Math.random() < 0.35 + lv * 0.08) {
+            triggerSkill(f2);
+          } else {
+            triggerFighterAction(f2, f1, Math.random() < 0.5 ? 'punch' : 'kick', true);
+          }
+          a.cd = Math.max(0.55, 1.2 - lv * 0.12);
+          return;
+        }
+
+        const away = f2.x >= f1.x ? 1 : -1;
+        const cornered = (away > 0 && f2.x > RING_RIGHT - 70) || (away < 0 && f2.x < RING_LEFT + 70);
+        const want = a.cd <= 0 ? 94 : 148;
+        f2.moveDir = 0;
+
+        if (a.hold <= 0 && !f2.guarding) {
+          if (dist > want + 14) f2.moveDir = -away;
+          else if (dist < want - 22 && !cornered) f2.moveDir = away;
+        }
+        if (Math.random() < dt * 0.5) a.hold = Math.max(0.1, 0.32 - lv * 0.04);
+
+        // 3. 일반 공격 및 스킬 사용
+        if (f2.action === 'idle' && !f2.guarding && a.cd <= 0 && dist < 112) {
+          const r = Math.random();
+          triggerFighterAction(f2, f1, r < 0.5 ? 'punch' : 'kick', Math.random() < (0.32 + lv * 0.08));
+          a.cd = Math.max(0.5, 1.3 - lv * 0.14) + Math.random() * 0.45;
+        }
+        if (f2.action === 'idle' && !f2.guarding && dist < 126 && Math.random() < dt * (0.20 + lv * 0.10)) {
+          triggerSkill(f2);
+          a.cd = Math.max(0.6, 1.2 - lv * 0.1);
         }
       }
 
@@ -1104,32 +1848,70 @@
         const dt = lastTs ? Math.min(0.05, (ts - lastTs) / 1000) : 0.016;
         lastTs = ts;
         animTime += dt;
+        if (screenShake > 0) screenShake = Math.max(0, screenShake - dt * 28);
 
-        if (phase === 'fight') {
-          roundTimer = Math.max(0, roundTimer - dt);
-          if (roundTimer <= 0) {
-            finishRound(f1.hp >= f2.hp ? 1 : 2, 'TIME OVER!');
-          }
-          // 1P 입력
-          f1.moveDir = (keys['ArrowRight'] ? 1 : 0) - (keys['ArrowLeft'] ? 1 : 0);
-          f1.crouching = Boolean(keys['ArrowDown']);
-          f1.guarding = Boolean(keys['KeyC']);
-          if (keys['ArrowUp'] && f1.y >= FLOOR_Y) f1.vy = -520;
-
-          if (currentMode === 'practice') updateAi(dt);
+        // 히트스톱(역경직) 처리: 강타/스킬 적중 순간 타격감을 극대화
+        if (hitstopTimer > 0) {
+          hitstopTimer = Math.max(0, hitstopTimer - dt);
         } else {
-          f1.moveDir = 0; f2.moveDir = 0;
+          if (canControlPlayer()) {
+            if (phase === 'fight') {
+              roundTimer = Math.max(0, roundTimer - dt);
+              if (roundTimer <= 0) {
+                finishRound(f1.hp >= f2.hp ? 1 : 2, 'TIME OVER!');
+              }
+            }
+
+            const h = (keys['ArrowRight'] ? 1 : 0) - (keys['ArrowLeft'] ? 1 : 0);
+            const down = Boolean(keys['ArrowDown']);
+            f1.moveDir = h;
+            f1.crouching = down && h === 0;
+
+            let tok = null;
+            if (h !== 0 && h === -f1.dir) tok = 'B';
+            else if (down) tok = 'D';
+            else if (h !== 0 && h === f1.dir) tok = 'F';
+
+            if (tok && tok !== f1.lastTok) {
+              f1.cmd.push({ tok, t: animTime });
+              f1.cmd = f1.cmd.filter(c => animTime - c.t <= 1.2).slice(-6);
+            }
+            f1.lastTok = tok;
+
+            f1.backGuard = f1.moveDir !== 0 && f1.moveDir === -f1.dir;
+            f1.guarding = f1.backGuard && f1.action === 'idle';
+            if (keys['ArrowUp'] && f1.y >= FLOOR_Y && f1.action === 'idle') f1.vy = -520;
+
+            if (phase === 'fight' && currentMode === 'practice') updateAi(dt);
+          } else {
+            f1.moveDir = 0; f2.moveDir = 0;
+          }
+
+          updateFighterPhysics(f1, f2, dt);
+          updateFighterPhysics(f2, f1, dt);
+
+          if (Math.abs(f1.y - f2.y) < 50 && f1.action !== 'down' && f2.action !== 'down') {
+            const d = f2.x - f1.x, minD = 62;
+            if (Math.abs(d) < minD) {
+              const push = (minD - Math.abs(d)) * (d >= 0 ? 1 : -1);
+              if (f2.isSandbag) {
+                f1.x -= push;
+              } else {
+                f1.x -= push * 0.5;
+                f2.x += push * 0.5;
+              }
+            }
+          }
         }
 
-        updateFighterPhysics(f1, f2, dt);
-        updateFighterPhysics(f2, f1, dt);
-
-        // 렌더링
         ctx.clearRect(0, 0, viewW, viewH);
         const scale = Math.min(viewW / ARENA_W, viewH / ARENA_H);
         const ox = (viewW - ARENA_W * scale) / 2;
         const oy = (viewH - ARENA_H * scale) / 2;
         ctx.save();
+        if (screenShake > 0) {
+          ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+        }
         ctx.translate(ox, oy);
         ctx.scale(scale, scale);
         drawArena();
@@ -1145,12 +1927,35 @@
           ctx.lineWidth = 4;
           ctx.beginPath(); ctx.arc(sp.x, sp.y, sp.r, 0, Math.PI * 2); ctx.stroke();
         }
+
+        for (let i = floatingLabels.length - 1; i >= 0; i--) {
+          const fl = floatingLabels[i];
+          fl.life -= dt;
+          fl.y -= 28 * dt;
+          if (fl.life <= 0) { floatingLabels.splice(i, 1); continue; }
+          ctx.save();
+          ctx.globalAlpha = Math.min(1, fl.life * 2);
+          ctx.font = '900 14px "Noto Sans KR"';
+          ctx.textAlign = 'center';
+          ctx.strokeStyle = '#090d16';
+          ctx.lineWidth = 3.5;
+          ctx.strokeText(fl.text, fl.x, fl.y);
+          ctx.fillStyle = fl.color;
+          ctx.fillText(fl.text, fl.x, fl.y);
+          ctx.restore();
+        }
         ctx.restore();
 
-        // HUD 업데이트
+        const sEl = document.getElementById('skillStatus');
+        const mySk = FIGHTERS[f1.id].skill;
+        const isArm = mySk.button === 'punch';
+        if (sEl) {
+          sEl.innerHTML = `<span class="${isArm ? 'text-sky-300' : 'text-rose-300'}">${mySk.name}</span><br><span class="text-amber-300">←↓→+${mySk.buttonLabel}</span>`;
+        }
+
         document.getElementById('hudP1Hp').style.width = `${Math.max(0, f1.hp)}%`;
-        document.getElementById('hudP2Hp').style.width = `${Math.max(0, f2.hp)}%`;
-        document.getElementById('hudTimer').textContent = Math.ceil(roundTimer);
+        document.getElementById('hudP2Hp').style.width = f2.isSandbag ? '100%' : `${Math.max(0, f2.hp)}%`;
+        document.getElementById('hudTimer').textContent = phase === 'select' ? 'FREE' : Math.ceil(roundTimer);
         document.getElementById('hudP1Rounds').textContent = '●'.repeat(p1Rounds) + '○'.repeat(2 - p1Rounds);
         document.getElementById('hudP2Rounds').textContent = '○'.repeat(2 - p2Rounds) + '●'.repeat(p2Rounds);
 
@@ -1158,7 +1963,7 @@
       }
 
       // ==========================================
-      // 7. 이벤트 연결 (선택창 / 조작 패드 / 헤더)
+      // 8. 이벤트 연결
       // ==========================================
       document.getElementById('pickTargetP1Btn').addEventListener('click', () => {
         pickTarget = 'p1';
@@ -1173,51 +1978,81 @@
 
       document.getElementById('startFightBtn').addEventListener('click', () => {
         getAudioContext();
-        startFight('practice');
+        startFight('practice', true);
       });
 
       function returnToSelect() {
         phase = 'select';
+        arcadeStage = 1;
         f1 = createFighter(state.p1Id, 1);
-        f2 = createFighter(state.p2Id, -1);
+        f2 = createWoodenSandbag();
         document.getElementById('matchResultBanner').classList.add('hidden');
         document.getElementById('matchResultBanner').classList.remove('flex');
-        document.getElementById('arcadeControlsPanel').classList.add('hidden');
-        document.getElementById('arcadeControlsPanel').classList.remove('flex');
+        document.getElementById('abortFightBtn').classList.add('hidden');
         document.getElementById('charSelectPanel').classList.remove('hidden');
+        updateSelectUi();
       }
 
-      document.getElementById('rematchBtn').addEventListener('click', () => startFight(currentMode));
+      document.getElementById('rematchBtn').addEventListener('click', () => {
+        const act = document.getElementById('rematchBtn').dataset.nextAction;
+        if (act === 'next_stage') {
+          arcadeStage++;
+          startFight('practice', false);
+        } else if (act === 'retry_stage') {
+          startFight('practice', false);
+        } else if (act === 'restart_arcade') {
+          startFight('practice', true);
+        } else {
+          startFight(currentMode, true);
+        }
+      });
       document.getElementById('backSelectBtn').addEventListener('click', returnToSelect);
       document.getElementById('abortFightBtn').addEventListener('click', returnToSelect);
 
-      // 키보드 & 온스크린 아케이드 패드
+      const ATK = {
+        KeyZ: ['punch', false], Digit1: ['punch', false], Numpad1: ['punch', false],
+        KeyX: ['punch', true],  Digit2: ['punch', true],  Numpad2: ['punch', true],
+        KeyC: ['kick', false],  Digit3: ['kick', false],  Numpad3: ['kick', false],
+        KeyV: ['kick', true],   Digit4: ['kick', true],   Numpad4: ['kick', true]
+      };
       window.addEventListener('keydown', (e) => {
         keys[e.code] = true;
-        if (phase !== 'fight') return;
+        if (!canControlPlayer()) return;
         if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
-        if (e.code === 'KeyZ' || e.code === 'KeyA') triggerFighterAction(f1, f2, 'punch');
-        else if (e.code === 'KeyX' || e.code === 'KeyS') triggerFighterAction(f1, f2, 'kick');
-        else if (e.code === 'Space') triggerFighterAction(f1, f2, 'special');
+        const a = ATK[e.code];
+        if (a && !e.repeat) triggerFighterAction(f1, f2, a[0], a[1]);
       });
       window.addEventListener('keyup', (e) => { keys[e.code] = false; });
 
-      function bindHold(id, code) {
-        const el = document.getElementById(id);
-        el.addEventListener('pointerdown', (e) => { e.preventDefault(); keys[code] = true; });
-        el.addEventListener('pointerup', () => { keys[code] = false; });
-        el.addEventListener('pointerleave', () => { keys[code] = false; });
-      }
-      bindHold('padLeft', 'ArrowLeft');
-      bindHold('padRight', 'ArrowRight');
-      bindHold('padUp', 'ArrowUp');
-      bindHold('padDown', 'ArrowDown');
-      bindHold('btnGuard', 'KeyC');
-      document.getElementById('btnPunch').addEventListener('pointerdown', (e) => { e.preventDefault(); triggerFighterAction(f1, f2, 'punch'); });
-      document.getElementById('btnKick').addEventListener('pointerdown', (e) => { e.preventDefault(); triggerFighterAction(f1, f2, 'kick'); });
-      document.getElementById('btnSpecial').addEventListener('pointerdown', (e) => { e.preventDefault(); triggerFighterAction(f1, f2, 'special'); });
+      [['btn1', 'punch', false], ['btn2', 'punch', true], ['btn3', 'kick', false], ['btn4', 'kick', true]].forEach(([id, act, st]) => {
+        document.getElementById(id).addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          triggerFighterAction(f1, f2, act, st);
+        });
+      });
 
-      // 모드 전환 (연습 vs 대전)
+      const stickBase = document.getElementById('stickBase'), stickKnob = document.getElementById('stickKnob');
+      let stickId = null;
+      function stickMove(e) {
+        const r = stickBase.getBoundingClientRect();
+        let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+        const R = r.width / 2 - 18, l = Math.hypot(dx, dy);
+        if (l > R) { dx *= R / l; dy *= R / l; }
+        stickKnob.style.transform = `translate(${dx}px,${dy}px)`;
+        const t = R * 0.35;
+        keys.ArrowLeft = dx < -t;
+        keys.ArrowRight = dx > t;
+        keys.ArrowUp = dy < -t * 1.2;
+        keys.ArrowDown = dy > t * 0.9;
+      }
+      function stickEnd() {
+        stickId = null; stickKnob.style.transform = '';
+        keys.ArrowLeft = keys.ArrowRight = keys.ArrowUp = keys.ArrowDown = false;
+      }
+      stickBase.addEventListener('pointerdown', (e) => { e.preventDefault(); stickId = e.pointerId; stickBase.setPointerCapture(e.pointerId); stickMove(e); });
+      stickBase.addEventListener('pointermove', (e) => { if (e.pointerId === stickId) stickMove(e); });
+      ['pointerup', 'pointercancel'].forEach(n => stickBase.addEventListener(n, stickEnd));
+
       document.getElementById('modePracticeTab').addEventListener('click', () => {
         currentMode = 'practice';
         document.getElementById('modePracticeTab').className = 'px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-amber-500 text-slate-950 shadow cursor-pointer';
@@ -1225,6 +2060,8 @@
         document.getElementById('pvpLobbySection').classList.add('hidden');
         document.getElementById('pvpLobbySection').classList.remove('flex');
         document.getElementById('gameAreaSection').classList.remove('hidden');
+        document.getElementById('startFightBtn').textContent = '🥊 STAGE 1 도전 시작!';
+        document.getElementById('selectGuideText').innerHTML = '1P 파이터를 고른 뒤 <b>나무 샌드백</b>으로 스킬을 연습하고, [STAGE 1 도전 시작]을 누르면 나머지 파이터들과 랜덤 연전을 펼칩니다!';
         returnToSelect();
       });
       document.getElementById('modePvPTab').addEventListener('click', () => {
@@ -1232,10 +2069,12 @@
         document.getElementById('modePvPTab').className = 'px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-blue-600 text-white shadow cursor-pointer';
         document.getElementById('modePracticeTab').className = 'px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300 cursor-pointer';
         document.getElementById('gameAreaSection').classList.add('hidden');
-        document.getElementById('arcadeControlsPanel').classList.add('hidden');
         document.getElementById('pvpLobbySection').classList.remove('hidden');
         document.getElementById('pvpLobbySection').classList.add('flex');
         document.getElementById('charSelectPanel').classList.remove('hidden');
+        document.getElementById('startFightBtn').textContent = '🥊 로컬 1:1 대전 시작';
+        document.getElementById('selectGuideText').textContent = '대전 모드에서는 1P와 2P 캐릭터를 각각 선택하거나 실시간 대기실 슬롯에 참가할 수 있습니다.';
+        updateSelectUi();
         renderWaitingList([{ username: getDisplayName(), socketId: socket.id }]);
         socket.emit('enter_pvp_lobby', { username: getDisplayName() });
       });
@@ -1257,7 +2096,6 @@
       document.getElementById('cancelRightBtn').addEventListener('click', cancelWait);
       document.getElementById('pvpStartMatchBtn').addEventListener('click', () => socket.emit('start_pvp_match'));
 
-      // 공통 모달/토스트/로그인
       let toastTimer = null;
       function showToast(msg) {
         const b = document.getElementById('toastBox');
@@ -1335,7 +2173,7 @@
       document.getElementById('resetCancelBtn').addEventListener('click', () => { document.getElementById('resetModal').classList.add('hidden'); document.getElementById('resetModal').classList.remove('flex'); });
       document.getElementById('resetConfirmBtn').addEventListener('click', () => {
         document.getElementById('resetModal').classList.add('hidden'); document.getElementById('resetModal').classList.remove('flex');
-        returnToSelect(); showToast('🔄 초기화되었습니다.');
+        returnToSelect(); showToast('🔄 대기실로 초기화되었습니다.');
       });
       document.getElementById('bgmToggleBtn').addEventListener('click', () => {
         state.bgmEnabled = !state.bgmEnabled; saveState(false);
