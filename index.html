@@ -52,6 +52,8 @@
     }
 
     #fullscreenStage { display: contents; }
+
+    /* 전체화면 모드: 게임 화면 비중 극대화 + 우측 상단 버튼바 + 슬림 패드 */
     #fullscreenStage:fullscreen {
       display: flex !important;
       flex-direction: column !important;
@@ -61,14 +63,15 @@
       position: fixed !important;
       inset: 0 !important;
       background: #020617 !important;
-      padding: 6px !important;
-      gap: 6px !important;
+      padding: 4px !important;
+      gap: 4px !important;
       overflow: hidden !important;
     }
     #fullscreenStage:fullscreen #gameAreaSection {
       flex: 1 1 0% !important;
       min-height: 0 !important;
-      border-radius: 12px !important;
+      border-radius: 10px !important;
+      border-width: 1px !important;
     }
     #fullscreenStage:fullscreen #canvasWrapper {
       width: 100% !important;
@@ -76,9 +79,39 @@
       aspect-ratio: auto !important;
       min-height: 0 !important;
     }
+    #fullscreenStage:fullscreen #fsTopQuickBar {
+      display: flex !important;
+    }
+    #fullscreenStage:fullscreen #arcadeTopHud {
+      top: 38px !important;
+    }
+    #fullscreenStage:fullscreen #skillCalloutRow {
+      top: 94px !important;
+    }
     #fullscreenStage:fullscreen #arcadeControlsPanel {
       flex-shrink: 0 !important;
-      padding: 8px 14px !important;
+      padding: 5px 12px !important;
+      border-radius: 12px !important;
+    }
+    #fullscreenStage:fullscreen #stickBase {
+      width: 88px !important;
+      height: 88px !important;
+      border-width: 3px !important;
+    }
+    #fullscreenStage:fullscreen #stickKnob {
+      width: 36px !important;
+      height: 36px !important;
+      margin: -18px 0 0 -18px !important;
+    }
+    #fullscreenStage:fullscreen .gp-btn {
+      width: 44px !important;
+      height: 44px !important;
+    }
+    #fullscreenStage:fullscreen .gp-btn span:first-child {
+      font-size: 0.9rem !important;
+    }
+    #fullscreenStage:fullscreen .gp-btn span:last-child {
+      font-size: 8px !important;
     }
   </style>
 </head>
@@ -204,6 +237,19 @@
         <div id="canvasWrapper" class="relative w-full aspect-[16/9] sm:aspect-auto sm:h-[400px] min-h-[240px] bg-slate-950">
           <canvas id="gameCanvas" class="absolute inset-0 w-full h-full block"></canvas>
 
+          <!-- 전체화면 전용 우측 상단 버튼바 (피 게이지 위) -->
+          <div id="fsTopQuickBar" class="hidden absolute top-1.5 right-2.5 z-20 items-center gap-1.5">
+            <button id="fsStartFightBtn" type="button" class="px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 text-slate-950 text-[11px] font-black shadow border border-amber-200/80 active:scale-95 cursor-pointer">
+              ⚔️ 대전시작
+            </button>
+            <button id="fsLobbyBtn" type="button" class="px-2.5 py-1 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-slate-200 text-[11px] font-black shadow border border-slate-600 active:scale-95 cursor-pointer">
+              🪵 로비로
+            </button>
+            <button id="fsShrinkBtn" type="button" class="px-2.5 py-1 rounded-lg bg-rose-600/90 hover:bg-rose-500 text-white text-[11px] font-black shadow border border-rose-300/60 active:scale-95 cursor-pointer">
+              ✕ 축소
+            </button>
+          </div>
+
           <!-- 상단 체력바 & 라운드 타이머 -->
           <div id="arcadeTopHud" class="absolute top-2.5 inset-x-3 flex items-center gap-2 pointer-events-none z-10">
             <!-- 1P HP -->
@@ -236,7 +282,7 @@
           </div>
 
           <!-- 에너지바와 캐릭터 사이 전용 스킬명 & 콤보 표시 영역 -->
-          <div class="pointer-events-none absolute top-[62px] inset-x-4 flex items-start justify-between z-10">
+          <div id="skillCalloutRow" class="pointer-events-none absolute top-[62px] inset-x-4 flex items-start justify-between z-10">
             <div class="flex flex-col items-start gap-1">
               <div id="p1SkillCallout" class="hidden px-3 py-1 rounded-lg bg-slate-950/90 border-2 border-sky-400 text-xs sm:text-sm font-black text-amber-300 tracking-wide shadow-lg">
                 ⚡ 철산고!
@@ -908,6 +954,20 @@
       document.addEventListener('fullscreenchange', () => {
         fullscreenBtn.textContent = document.fullscreenElement ? '✕ 축소' : '⛶ 전체화면';
         setTimeout(resizeCanvas, 80);
+      });
+
+      document.getElementById('fsShrinkBtn').addEventListener('click', async () => {
+        if (document.fullscreenElement) {
+          await document.exitFullscreen().catch(() => {});
+        }
+      });
+      document.getElementById('fsStartFightBtn').addEventListener('click', () => {
+        getAudioContext();
+        startFight(currentMode, true);
+      });
+      document.getElementById('fsLobbyBtn').addEventListener('click', () => {
+        returnToSelect();
+        showToast('🪵 대기실로 이동했습니다.');
       });
 
       let phase = 'select';
