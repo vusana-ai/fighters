@@ -53,7 +53,7 @@
 
     #fullscreenStage { display: contents; }
 
-    /* 전체화면 모드: 게임 화면 비중 극대화 + 우측 상단 버튼바 + 슬림 패드 */
+    /* 전체화면 모드: 게이지바는 최상단 유지, 전체화면 버튼은 중앙 배지 바로 아래 통합 */
     #fullscreenStage:fullscreen {
       display: flex !important;
       flex-direction: column !important;
@@ -79,14 +79,8 @@
       aspect-ratio: auto !important;
       min-height: 0 !important;
     }
-    #fullscreenStage:fullscreen #fsTopQuickBar {
+    #fullscreenStage:fullscreen #fsCenterQuickBar {
       display: flex !important;
-    }
-    #fullscreenStage:fullscreen #arcadeTopHud {
-      top: 38px !important;
-    }
-    #fullscreenStage:fullscreen #skillCalloutRow {
-      top: 94px !important;
     }
     #fullscreenStage:fullscreen #arcadeControlsPanel {
       flex-shrink: 0 !important;
@@ -94,14 +88,14 @@
       border-radius: 12px !important;
     }
     #fullscreenStage:fullscreen #stickBase {
-      width: 88px !important;
-      height: 88px !important;
+      width: 86px !important;
+      height: 86px !important;
       border-width: 3px !important;
     }
     #fullscreenStage:fullscreen #stickKnob {
-      width: 36px !important;
-      height: 36px !important;
-      margin: -18px 0 0 -18px !important;
+      width: 34px !important;
+      height: 34px !important;
+      margin: -17px 0 0 -17px !important;
     }
     #fullscreenStage:fullscreen .gp-btn {
       width: 44px !important;
@@ -231,71 +225,71 @@
 
     <div id="fullscreenStage">
       <!-- ========================================== -->
-      <!-- 위쪽 게임 화면 (대기실 나무샌드백 연습 & 본 대결) -->
+      <!-- 위쪽 게임 화면 (게이지바 최상단 고정 + 넓은 전장 뷰) -->
       <!-- ========================================== -->
       <section id="gameAreaSection" class="relative bg-slate-900 border-2 border-amber-500/40 rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
-        <div id="canvasWrapper" class="relative w-full aspect-[16/9] sm:aspect-auto sm:h-[400px] min-h-[240px] bg-slate-950">
+        <div id="canvasWrapper" class="relative w-full aspect-[16/9] sm:aspect-auto sm:h-[430px] min-h-[250px] bg-slate-950">
           <canvas id="gameCanvas" class="absolute inset-0 w-full h-full block"></canvas>
 
-          <!-- 전체화면 전용 우측 상단 버튼바 (피 게이지 위) -->
-          <div id="fsTopQuickBar" class="hidden absolute top-1.5 right-2.5 z-20 items-center gap-1.5">
-            <button id="fsStartFightBtn" type="button" class="px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 text-slate-950 text-[11px] font-black shadow border border-amber-200/80 active:scale-95 cursor-pointer">
-              ⚔️ 대전시작
-            </button>
-            <button id="fsLobbyBtn" type="button" class="px-2.5 py-1 rounded-lg bg-slate-900/90 hover:bg-slate-800 text-slate-200 text-[11px] font-black shadow border border-slate-600 active:scale-95 cursor-pointer">
-              🪵 로비로
-            </button>
-            <button id="fsShrinkBtn" type="button" class="px-2.5 py-1 rounded-lg bg-rose-600/90 hover:bg-rose-500 text-white text-[11px] font-black shadow border border-rose-300/60 active:scale-95 cursor-pointer">
-              ✕ 축소
-            </button>
-          </div>
-
-          <!-- 상단 체력바 & 라운드 타이머 -->
-          <div id="arcadeTopHud" class="absolute top-2.5 inset-x-3 flex items-center gap-2 pointer-events-none z-10">
+          <!-- 상단 체력바 & 라운드 타이머 (최상단 밀착 배치) -->
+          <div id="arcadeTopHud" class="absolute top-1.5 inset-x-2.5 flex items-start gap-2 pointer-events-none z-10">
             <!-- 1P HP -->
             <div class="flex-1 min-w-0">
-              <div class="flex justify-between items-center text-[11px] font-black text-sky-300 mb-0.5 px-1">
+              <div class="flex justify-between items-center text-[10px] sm:text-[11px] font-black text-sky-300 mb-0.5 px-1">
                 <span id="hudP1Name" class="truncate">1P 아키라</span>
                 <span id="hudP1Rounds" class="text-amber-300">○○</span>
               </div>
-              <div class="w-full h-4 bg-rose-950/90 border-2 border-slate-200/80 rounded-sm overflow-hidden shadow-md">
+              <div class="w-full h-3.5 bg-rose-950/90 border-2 border-slate-200/80 rounded-sm overflow-hidden shadow-md">
                 <div id="hudP1Hp" class="h-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-200 transition-all duration-75 ml-auto" style="width:100%"></div>
               </div>
             </div>
 
-            <!-- 타이머 / STAGE 배지 -->
-            <div class="shrink-0 px-2.5 h-12 rounded-xl bg-slate-950/90 border-2 border-amber-400 flex flex-col items-center justify-center shadow-lg">
-              <span id="hudTimerLabel" class="text-[9px] font-black text-amber-300 leading-none">연습실</span>
-              <span id="hudTimer" class="text-base font-black text-white leading-tight tabular-nums">FREE</span>
+            <!-- 중앙 타이머 + 전체화면 전용 빠른 버튼(바로 아래 통합) -->
+            <div class="shrink-0 flex flex-col items-center gap-1">
+              <div class="px-2.5 h-10 rounded-xl bg-slate-950/90 border-2 border-amber-400 flex flex-col items-center justify-center shadow-lg">
+                <span id="hudTimerLabel" class="text-[8px] font-black text-amber-300 leading-none">연습실</span>
+                <span id="hudTimer" class="text-sm font-black text-white leading-tight tabular-nums">FREE</span>
+              </div>
+              <div id="fsCenterQuickBar" class="hidden pointer-events-auto items-center gap-1">
+                <button id="fsStartFightBtn" type="button" class="px-2 py-0.5 rounded bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 text-[10px] font-black shadow border border-amber-200/80 active:scale-95 cursor-pointer">
+                  ⚔️ 대전시작
+                </button>
+                <button id="fsLobbyBtn" type="button" class="px-2 py-0.5 rounded bg-slate-900/95 text-slate-200 text-[10px] font-black shadow border border-slate-600 active:scale-95 cursor-pointer">
+                  🪵 로비로
+                </button>
+                <button id="fsShrinkBtn" type="button" class="px-2 py-0.5 rounded bg-rose-600/95 text-white text-[10px] font-black shadow border border-rose-300/60 active:scale-95 cursor-pointer">
+                  ✕ 축소
+                </button>
+              </div>
             </div>
 
             <!-- 2P HP -->
             <div class="flex-1 min-w-0">
-              <div class="flex justify-between items-center text-[11px] font-black text-amber-200 mb-0.5 px-1">
+              <div class="flex justify-between items-center text-[10px] sm:text-[11px] font-black text-amber-200 mb-0.5 px-1">
                 <span id="hudP2Rounds" class="text-amber-300">○○</span>
                 <span id="hudP2Name" class="truncate">🪵 나무 샌드백</span>
               </div>
-              <div class="w-full h-4 bg-rose-950/90 border-2 border-slate-200/80 rounded-sm overflow-hidden shadow-md">
+              <div class="w-full h-3.5 bg-rose-950/90 border-2 border-slate-200/80 rounded-sm overflow-hidden shadow-md">
                 <div id="hudP2Hp" class="h-full bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 transition-all duration-75" style="width:100%"></div>
               </div>
             </div>
           </div>
 
           <!-- 에너지바와 캐릭터 사이 전용 스킬명 & 콤보 표시 영역 -->
-          <div id="skillCalloutRow" class="pointer-events-none absolute top-[62px] inset-x-4 flex items-start justify-between z-10">
+          <div id="skillCalloutRow" class="pointer-events-none absolute top-[46px] inset-x-3 flex items-start justify-between z-10">
             <div class="flex flex-col items-start gap-1">
-              <div id="p1SkillCallout" class="hidden px-3 py-1 rounded-lg bg-slate-950/90 border-2 border-sky-400 text-xs sm:text-sm font-black text-amber-300 tracking-wide shadow-lg">
+              <div id="p1SkillCallout" class="hidden px-2.5 py-0.5 rounded-lg bg-slate-950/90 border-2 border-sky-400 text-xs sm:text-sm font-black text-amber-300 tracking-wide shadow-lg">
                 ⚡ 철산고!
               </div>
-              <div id="p1ComboBadge" class="hidden px-2.5 py-0.5 rounded-md bg-amber-500 text-slate-950 text-[11px] font-black shadow">
+              <div id="p1ComboBadge" class="hidden px-2 py-0.5 rounded-md bg-amber-500 text-slate-950 text-[10px] font-black shadow">
                 2 HITS!
               </div>
             </div>
             <div class="flex flex-col items-end gap-1 ml-auto">
-              <div id="p2SkillCallout" class="hidden px-3 py-1 rounded-lg bg-slate-950/90 border-2 border-rose-400 text-xs sm:text-sm font-black text-amber-300 tracking-wide shadow-lg">
+              <div id="p2SkillCallout" class="hidden px-2.5 py-0.5 rounded-lg bg-slate-950/90 border-2 border-rose-400 text-xs sm:text-sm font-black text-amber-300 tracking-wide shadow-lg">
                 ⚡ 비연각!
               </div>
-              <div id="p2ComboBadge" class="hidden px-2.5 py-0.5 rounded-md bg-rose-500 text-white text-[11px] font-black shadow">
+              <div id="p2ComboBadge" class="hidden px-2 py-0.5 rounded-md bg-rose-500 text-white text-[10px] font-black shadow">
                 2 HITS!
               </div>
             </div>
@@ -323,7 +317,7 @@
       </section>
 
       <!-- ========================================== -->
-      <!-- 아래쪽 1: 아케이드 조작 패드 (화면 바로 아래 배치) -->
+      <!-- 아래쪽 1: 아케이드 조작 패드 -->
       <!-- ========================================== -->
       <section id="arcadeControlsPanel" class="bg-slate-900/95 border border-slate-800 rounded-2xl p-3.5 shadow-xl flex flex-col gap-3">
         <div class="flex items-center justify-between gap-3">
@@ -525,11 +519,19 @@
       }
 
       // ==========================================
-      // 2. Web Audio 아케이드 효과음 & BGM
+      // 2. Web Audio 아케이드 효과음 & 4곡 로테이션 BGM
       // ==========================================
       let audioCtx = null;
       let bgmTimer = null;
       let bgmStep = 0;
+      let bgmTrackIdx = 0;
+
+      const BGM_TRACKS = [
+        { type: 'square',   tempo: 235, notes: [196.00, 220.00, 261.63, 293.66, 329.63, 293.66, 261.63, 220.00] }, // 1. 클래식 격투 테마
+        { type: 'sawtooth', tempo: 195, notes: [164.81, 164.81, 196.00, 246.94, 220.00, 196.00, 164.81, 146.83] }, // 2. 긴장감 도장 테마
+        { type: 'triangle', tempo: 210, notes: [220.00, 261.63, 329.63, 392.00, 349.23, 329.63, 293.66, 246.94] }, // 3. 스피드 아레나 테마
+        { type: 'square',   tempo: 185, notes: [146.83, 174.61, 220.00, 261.63, 293.66, 261.63, 220.00, 174.61] }  // 4. 결전 챔피언 테마
+      ];
 
       function getAudioContext() {
         if (!state.soundEnabled && !state.bgmEnabled) return null;
@@ -609,27 +611,31 @@
         }
       }
 
-      function startBGM() {
+      function startBGM(advanceTrack = false) {
         stopBGM();
         if (!state.bgmEnabled) return;
         const ctxA = getAudioContext();
         if (!ctxA) return;
-        const notes = [196, 220, 261.63, 293.66, 329.63, 293.66, 261.63, 220];
+        if (advanceTrack) {
+          bgmTrackIdx = (bgmTrackIdx + 1) % BGM_TRACKS.length;
+        }
+        const track = BGM_TRACKS[bgmTrackIdx];
+        bgmStep = 0;
         bgmTimer = setInterval(() => {
           if (!state.bgmEnabled || !audioCtx) return;
           try {
             const now = audioCtx.currentTime;
             const osc = audioCtx.createOscillator();
             const g = audioCtx.createGain();
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(notes[bgmStep % notes.length], now);
-            g.gain.setValueAtTime(0.028, now);
-            g.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+            osc.type = track.type;
+            osc.frequency.setValueAtTime(track.notes[bgmStep % track.notes.length], now);
+            g.gain.setValueAtTime(0.025, now);
+            g.gain.exponentialRampToValueAtTime(0.0001, now + (track.tempo / 1000) * 0.9);
             osc.connect(g); g.connect(audioCtx.destination);
-            osc.start(now); osc.stop(now + 0.23);
+            osc.start(now); osc.stop(now + (track.tempo / 1000) * 0.92);
             bgmStep++;
           } catch (e) {}
-        }, 250);
+        }, track.tempo);
       }
 
       function stopBGM() {
@@ -928,7 +934,7 @@
         const rect = canvasWrapper.getBoundingClientRect();
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         viewW = Math.max(320, rect.width || 900);
-        viewH = Math.max(220, rect.height || 400);
+        viewH = Math.max(220, rect.height || 430);
         canvas.width = Math.floor(viewW * dpr);
         canvas.height = Math.floor(viewH * dpr);
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1539,7 +1545,7 @@
 
         el.textContent = `⚡ ${skillName}`;
         el.style.borderColor = tpl.aura;
-        el.className = `px-3 py-1 rounded-lg bg-slate-950/90 border-2 text-xs sm:text-sm font-black ${isArm ? 'text-sky-300' : 'text-amber-300'} tracking-wide shadow-lg skill-callout-anim`;
+        el.className = `px-2.5 py-0.5 rounded-lg bg-slate-950/90 border-2 text-xs sm:text-sm font-black ${isArm ? 'text-sky-300' : 'text-amber-300'} tracking-wide shadow-lg skill-callout-anim`;
         el.classList.remove('hidden');
 
         void el.offsetWidth;
@@ -1736,7 +1742,7 @@
         document.getElementById('abortFightBtn').classList.remove('hidden');
         document.getElementById('matchResultBanner').classList.add('hidden');
         document.getElementById('matchResultBanner').classList.remove('flex');
-        if (state.bgmEnabled) startBGM();
+        if (state.bgmEnabled) startBGM(true);
         startRound(1);
       }
 
@@ -1746,6 +1752,7 @@
         roundTimer = 60;
         phase = 'countdown';
         updateSelectUi();
+        if (state.bgmEnabled && !bgmTimer) startBGM(false);
 
         const stageHeader = currentMode === 'practice'
           ? `STAGE ${arcadeStage} · VS ${FIGHTERS[state.p2Id].name}\nROUND ${num}`
@@ -1762,6 +1769,7 @@
       function finishRound(winnerNum, reasonText) {
         if (phase !== 'fight') return;
         phase = 'roundEnd';
+        stopBGM();
         playSfx('ko');
         showBanner(reasonText, 1500);
         if (winnerNum === 1) p1Rounds++; else p2Rounds++;
@@ -1769,6 +1777,7 @@
         setTimeout(() => {
           if (p1Rounds >= 2 || p2Rounds >= 2) {
             phase = 'matchEnd';
+            stopBGM();
             const iWon = p1Rounds >= 2;
             const rematchBtn = document.getElementById('rematchBtn');
 
@@ -2088,6 +2097,7 @@
       function returnToSelect() {
         phase = 'select';
         arcadeStage = 1;
+        stopBGM();
         f1 = createFighter(state.p1Id, 1);
         f2 = createWoodenSandbag();
         document.getElementById('matchResultBanner').classList.add('hidden');
@@ -2284,7 +2294,7 @@
       document.getElementById('bgmToggleBtn').addEventListener('click', () => {
         state.bgmEnabled = !state.bgmEnabled; saveState(false);
         document.getElementById('bgmToggleBtn').textContent = state.bgmEnabled ? '🎵 배경음 ON' : '🔇 배경음 OFF';
-        if (state.bgmEnabled) startBGM(); else stopBGM();
+        if (state.bgmEnabled && (phase === 'fight' || phase === 'countdown')) startBGM(false); else stopBGM();
       });
       document.getElementById('soundToggleBtn').addEventListener('click', () => {
         state.soundEnabled = !state.soundEnabled; saveState(false);
