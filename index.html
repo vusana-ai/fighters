@@ -50,6 +50,36 @@
     .skill-callout-anim {
       animation: skillPop 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
     }
+
+    #fullscreenStage { display: contents; }
+    #fullscreenStage:fullscreen {
+      display: flex !important;
+      flex-direction: column !important;
+      justify-content: space-between !important;
+      width: 100vw !important;
+      height: 100dvh !important;
+      position: fixed !important;
+      inset: 0 !important;
+      background: #020617 !important;
+      padding: 6px !important;
+      gap: 6px !important;
+      overflow: hidden !important;
+    }
+    #fullscreenStage:fullscreen #gameAreaSection {
+      flex: 1 1 0% !important;
+      min-height: 0 !important;
+      border-radius: 12px !important;
+    }
+    #fullscreenStage:fullscreen #canvasWrapper {
+      width: 100% !important;
+      height: 100% !important;
+      aspect-ratio: auto !important;
+      min-height: 0 !important;
+    }
+    #fullscreenStage:fullscreen #arcadeControlsPanel {
+      flex-shrink: 0 !important;
+      padding: 8px 14px !important;
+    }
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col">
@@ -105,7 +135,10 @@
       </div>
       <div class="flex items-center gap-2 text-xs font-bold">
         <span id="stageModeLabel" class="px-2.5 py-0.5 rounded-lg bg-amber-500/20 border border-amber-400/50 text-amber-300">STAGE 1 · 대기실</span>
-        <span id="recordBadge" class="px-2 py-0.5 rounded-lg bg-slate-800 border border-slate-700 text-sky-300">0승 0패</span>
+        <button id="fullscreenBtn" type="button" title="전체화면 전환"
+          class="px-3 py-1.5 rounded-xl text-xs font-black bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white border border-sky-300/60 shadow active:scale-95 transition cursor-pointer">
+          ⛶ 전체화면
+        </button>
       </div>
     </section>
 
@@ -163,87 +196,114 @@
       </div>
     </section>
 
+    <div id="fullscreenStage">
+      <!-- ========================================== -->
+      <!-- 위쪽 게임 화면 (대기실 나무샌드백 연습 & 본 대결) -->
+      <!-- ========================================== -->
+      <section id="gameAreaSection" class="relative bg-slate-900 border-2 border-amber-500/40 rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
+        <div id="canvasWrapper" class="relative w-full aspect-[16/9] sm:aspect-auto sm:h-[400px] min-h-[240px] bg-slate-950">
+          <canvas id="gameCanvas" class="absolute inset-0 w-full h-full block"></canvas>
+
+          <!-- 상단 체력바 & 라운드 타이머 -->
+          <div id="arcadeTopHud" class="absolute top-2.5 inset-x-3 flex items-center gap-2 pointer-events-none z-10">
+            <!-- 1P HP -->
+            <div class="flex-1 min-w-0">
+              <div class="flex justify-between items-center text-[11px] font-black text-sky-300 mb-0.5 px-1">
+                <span id="hudP1Name" class="truncate">1P 아키라</span>
+                <span id="hudP1Rounds" class="text-amber-300">○○</span>
+              </div>
+              <div class="w-full h-4 bg-rose-950/90 border-2 border-slate-200/80 rounded-sm overflow-hidden shadow-md">
+                <div id="hudP1Hp" class="h-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-200 transition-all duration-75 ml-auto" style="width:100%"></div>
+              </div>
+            </div>
+
+            <!-- 타이머 / STAGE 배지 -->
+            <div class="shrink-0 px-2.5 h-12 rounded-xl bg-slate-950/90 border-2 border-amber-400 flex flex-col items-center justify-center shadow-lg">
+              <span id="hudTimerLabel" class="text-[9px] font-black text-amber-300 leading-none">연습실</span>
+              <span id="hudTimer" class="text-base font-black text-white leading-tight tabular-nums">FREE</span>
+            </div>
+
+            <!-- 2P HP -->
+            <div class="flex-1 min-w-0">
+              <div class="flex justify-between items-center text-[11px] font-black text-amber-200 mb-0.5 px-1">
+                <span id="hudP2Rounds" class="text-amber-300">○○</span>
+                <span id="hudP2Name" class="truncate">🪵 나무 샌드백</span>
+              </div>
+              <div class="w-full h-4 bg-rose-950/90 border-2 border-slate-200/80 rounded-sm overflow-hidden shadow-md">
+                <div id="hudP2Hp" class="h-full bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 transition-all duration-75" style="width:100%"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 에너지바와 캐릭터 사이 전용 스킬명 & 콤보 표시 영역 -->
+          <div class="pointer-events-none absolute top-[62px] inset-x-4 flex items-start justify-between z-10">
+            <div class="flex flex-col items-start gap-1">
+              <div id="p1SkillCallout" class="hidden px-3 py-1 rounded-lg bg-slate-950/90 border-2 border-sky-400 text-xs sm:text-sm font-black text-amber-300 tracking-wide shadow-lg">
+                ⚡ 철산고!
+              </div>
+              <div id="p1ComboBadge" class="hidden px-2.5 py-0.5 rounded-md bg-amber-500 text-slate-950 text-[11px] font-black shadow">
+                2 HITS!
+              </div>
+            </div>
+            <div class="flex flex-col items-end gap-1 ml-auto">
+              <div id="p2SkillCallout" class="hidden px-3 py-1 rounded-lg bg-slate-950/90 border-2 border-rose-400 text-xs sm:text-sm font-black text-amber-300 tracking-wide shadow-lg">
+                ⚡ 비연각!
+              </div>
+              <div id="p2ComboBadge" class="hidden px-2.5 py-0.5 rounded-md bg-rose-500 text-white text-[11px] font-black shadow">
+                2 HITS!
+              </div>
+            </div>
+          </div>
+
+          <!-- 중앙 아케이드 배너 -->
+          <div id="centerBanner" class="pointer-events-none absolute inset-0 z-20 hidden items-center justify-center">
+            <div id="centerBannerText" class="px-8 py-3 rounded-2xl bg-slate-950/85 border-2 border-amber-400 text-2xl sm:text-4xl font-black tracking-wider text-amber-300 text-center drop-shadow-[0_4px_20px_rgba(251,191,36,0.9)]">
+              FIGHT!
+            </div>
+          </div>
+
+          <!-- 스테이지 클리어 / 최종 우승 / 패배 배너 -->
+          <div id="matchResultBanner" class="absolute inset-0 z-30 hidden items-center justify-center bg-black/75 backdrop-blur-sm">
+            <div class="bg-slate-900/95 border-2 border-amber-400 rounded-2xl px-8 py-6 text-center shadow-2xl max-w-sm mx-4">
+              <div id="matchWinnerTitle" class="text-2xl sm:text-3xl font-black text-amber-300">🏆 1P WIN!</div>
+              <div id="matchResultSub" class="text-xs sm:text-sm font-bold text-slate-200 mt-1.5">완벽한 승리입니다!</div>
+              <div class="mt-5 flex gap-2 justify-center">
+                <button id="rematchBtn" type="button" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black cursor-pointer">▶ 다음 STAGE</button>
+                <button id="backSelectBtn" type="button" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-black border border-slate-700 cursor-pointer">🪵 대기실로</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========================================== -->
+      <!-- 아래쪽 1: 아케이드 조작 패드 (화면 바로 아래 배치) -->
+      <!-- ========================================== -->
+      <section id="arcadeControlsPanel" class="bg-slate-900/95 border border-slate-800 rounded-2xl p-3.5 shadow-xl flex flex-col gap-3">
+        <div class="flex items-center justify-between gap-3">
+          <div id="stickBase" class="relative w-32 h-32 shrink-0 rounded-full border-4 border-slate-700 shadow-[inset_0_6px_18px_rgba(0,0,0,.9),0_4px_12px_rgba(0,0,0,.6)]" style="touch-action:none;background:radial-gradient(circle at 50% 40%,#1e293b,#020617 75%)">
+            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-600 text-xs">◀</span>
+            <span class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-600 text-xs">▶</span>
+            <span class="absolute top-1.5 left-1/2 -translate-x-1/2 text-slate-600 text-xs">▲</span>
+            <span class="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-slate-600 text-xs">▼</span>
+            <div id="stickKnob" class="absolute w-12 h-12 rounded-full" style="left:50%;top:50%;margin:-24px 0 0 -24px;background:radial-gradient(circle at 35% 30%,#fca5a5,#dc2626 45%,#7f1d1d);box-shadow:0 6px 10px rgba(0,0,0,.7),inset 0 -4px 6px rgba(0,0,0,.35)"></div>
+          </div>
+          <div class="flex flex-col items-center gap-2">
+            <button id="abortFightBtn" type="button" class="hidden px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-900 text-slate-300 text-[11px] font-bold border border-slate-700 cursor-pointer">↩ 대기실(샌드백)</button>
+            <div id="skillStatus" class="text-[11px] text-slate-200 text-center leading-tight font-bold"></div>
+          </div>
+          <div class="grid grid-cols-2 gap-x-3 gap-y-2.5 shrink-0" style="transform:rotate(-6deg)">
+            <button id="btn1" type="button" class="gp-btn w-[60px] h-[60px] rounded-full text-white font-black flex flex-col items-center justify-center cursor-pointer" style="background:radial-gradient(circle at 35% 28%,#7dd3fc,#2563eb 60%,#1e3a8a)"><span class="text-lg leading-none">1</span><span class="text-[10px]">약손</span></button>
+            <button id="btn2" type="button" class="gp-btn w-[60px] h-[60px] rounded-full text-white font-black flex flex-col items-center justify-center cursor-pointer" style="background:radial-gradient(circle at 35% 28%,#a5b4fc,#4f46e5 60%,#312e81)"><span class="text-lg leading-none">2</span><span class="text-[10px]">강손</span></button>
+            <button id="btn3" type="button" class="gp-btn w-[60px] h-[60px] rounded-full text-white font-black flex flex-col items-center justify-center cursor-pointer" style="background:radial-gradient(circle at 35% 28%,#fdba74,#ea580c 60%,#7c2d12)"><span class="text-lg leading-none">3</span><span class="text-[10px]">약발</span></button>
+            <button id="btn4" type="button" class="gp-btn w-[60px] h-[60px] rounded-full text-white font-black flex flex-col items-center justify-center cursor-pointer" style="background:radial-gradient(circle at 35% 28%,#fca5a5,#dc2626 60%,#7f1d1d)"><span class="text-lg leading-none">4</span><span class="text-[10px]">강발</span></button>
+          </div>
+        </div>
+      </section>
+    </div>
+
     <!-- ========================================== -->
-    <!-- 위쪽 게임 화면 (대기실 나무샌드백 연습 & 본 대결) -->
-    <!-- ========================================== -->
-    <section id="gameAreaSection" class="relative bg-slate-900 border-2 border-amber-500/40 rounded-2xl overflow-hidden shadow-2xl shadow-black/50">
-      <div id="canvasWrapper" class="relative w-full aspect-[16/9] sm:aspect-auto sm:h-[400px] min-h-[240px] bg-slate-950">
-        <canvas id="gameCanvas" class="absolute inset-0 w-full h-full block"></canvas>
-
-        <!-- 상단 체력바 & 라운드 타이머 -->
-        <div id="arcadeTopHud" class="absolute top-2.5 inset-x-3 flex items-center gap-2 pointer-events-none z-10">
-          <!-- 1P HP -->
-          <div class="flex-1 min-w-0">
-            <div class="flex justify-between items-center text-[11px] font-black text-sky-300 mb-0.5 px-1">
-              <span id="hudP1Name" class="truncate">1P 아키라</span>
-              <span id="hudP1Rounds" class="text-amber-300">○○</span>
-            </div>
-            <div class="w-full h-4 bg-rose-950/90 border-2 border-slate-200/80 rounded-sm overflow-hidden shadow-md">
-              <div id="hudP1Hp" class="h-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-200 transition-all duration-75 ml-auto" style="width:100%"></div>
-            </div>
-          </div>
-
-          <!-- 타이머 / STAGE 배지 -->
-          <div class="shrink-0 px-2.5 h-12 rounded-xl bg-slate-950/90 border-2 border-amber-400 flex flex-col items-center justify-center shadow-lg">
-            <span id="hudTimerLabel" class="text-[9px] font-black text-amber-300 leading-none">연습실</span>
-            <span id="hudTimer" class="text-base font-black text-white leading-tight tabular-nums">FREE</span>
-          </div>
-
-          <!-- 2P HP -->
-          <div class="flex-1 min-w-0">
-            <div class="flex justify-between items-center text-[11px] font-black text-amber-200 mb-0.5 px-1">
-              <span id="hudP2Rounds" class="text-amber-300">○○</span>
-              <span id="hudP2Name" class="truncate">🪵 나무 샌드백</span>
-            </div>
-            <div class="w-full h-4 bg-rose-950/90 border-2 border-slate-200/80 rounded-sm overflow-hidden shadow-md">
-              <div id="hudP2Hp" class="h-full bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-400 transition-all duration-75" style="width:100%"></div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 에너지바와 캐릭터 사이 전용 스킬명 & 콤보 표시 영역 -->
-        <div class="pointer-events-none absolute top-[62px] inset-x-4 flex items-start justify-between z-10">
-          <div class="flex flex-col items-start gap-1">
-            <div id="p1SkillCallout" class="hidden px-3 py-1 rounded-lg bg-slate-950/90 border-2 border-sky-400 text-xs sm:text-sm font-black text-amber-300 tracking-wide shadow-lg">
-              ⚡ 철산고!
-            </div>
-            <div id="p1ComboBadge" class="hidden px-2.5 py-0.5 rounded-md bg-amber-500 text-slate-950 text-[11px] font-black shadow">
-              2 HITS!
-            </div>
-          </div>
-          <div class="flex flex-col items-end gap-1 ml-auto">
-            <div id="p2SkillCallout" class="hidden px-3 py-1 rounded-lg bg-slate-950/90 border-2 border-rose-400 text-xs sm:text-sm font-black text-amber-300 tracking-wide shadow-lg">
-              ⚡ 비연각!
-            </div>
-            <div id="p2ComboBadge" class="hidden px-2.5 py-0.5 rounded-md bg-rose-500 text-white text-[11px] font-black shadow">
-              2 HITS!
-            </div>
-          </div>
-        </div>
-
-        <!-- 중앙 아케이드 배너 (ROUND / FIGHT! / K.O.! 전용) -->
-        <div id="centerBanner" class="pointer-events-none absolute inset-0 z-20 hidden items-center justify-center">
-          <div id="centerBannerText" class="px-8 py-3 rounded-2xl bg-slate-950/85 border-2 border-amber-400 text-2xl sm:text-4xl font-black tracking-wider text-amber-300 text-center drop-shadow-[0_4px_20px_rgba(251,191,36,0.9)]">
-            FIGHT!
-          </div>
-        </div>
-
-        <!-- 스테이지 클리어 / 최종 우승 / 패배 배너 -->
-        <div id="matchResultBanner" class="absolute inset-0 z-30 hidden items-center justify-center bg-black/75 backdrop-blur-sm">
-          <div class="bg-slate-900/95 border-2 border-amber-400 rounded-2xl px-8 py-6 text-center shadow-2xl max-w-sm mx-4">
-            <div id="matchWinnerTitle" class="text-2xl sm:text-3xl font-black text-amber-300">🏆 1P WIN!</div>
-            <div id="matchResultSub" class="text-xs sm:text-sm font-bold text-slate-200 mt-1.5">완벽한 승리입니다!</div>
-            <div class="mt-5 flex gap-2 justify-center">
-              <button id="rematchBtn" type="button" class="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black cursor-pointer">▶ 다음 STAGE</button>
-              <button id="backSelectBtn" type="button" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-black border border-slate-700 cursor-pointer">🪵 대기실로</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================== -->
-    <!-- 아래쪽 1: 캐릭터 얼굴 선택창 -->
+    <!-- 아래쪽 2: 캐릭터 얼굴 선택창 (패드 아래 배치) -->
     <!-- ========================================== -->
     <section id="charSelectPanel" class="bg-slate-900/95 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col gap-3">
       <div class="flex items-center justify-between flex-wrap gap-2">
@@ -275,35 +335,6 @@
         <button id="startFightBtn" type="button" class="w-full sm:w-auto px-7 py-2.5 rounded-xl bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 hover:from-amber-300 hover:to-rose-400 text-slate-950 font-black text-sm shadow-lg shadow-amber-500/25 active:scale-95 transition cursor-pointer">
           🥊 STAGE 1 도전 시작!
         </button>
-      </div>
-    </section>
-
-    <!-- ========================================== -->
-    <!-- 아래쪽 2: 아케이드 조작 패드 -->
-    <!-- ========================================== -->
-    <section id="arcadeControlsPanel" class="bg-slate-900/95 border border-slate-800 rounded-2xl p-3.5 shadow-xl flex flex-col gap-3">
-      <div class="flex items-center justify-between gap-3 flex-wrap">
-        <div id="stickBase" class="relative w-32 h-32 shrink-0 rounded-full border-4 border-slate-700 shadow-[inset_0_6px_18px_rgba(0,0,0,.9),0_4px_12px_rgba(0,0,0,.6)]" style="touch-action:none;background:radial-gradient(circle at 50% 40%,#1e293b,#020617 75%)">
-          <span class="absolute left-2 top-1/2 -translate-y-1/2 text-slate-600 text-xs">◀</span>
-          <span class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-600 text-xs">▶</span>
-          <span class="absolute top-1.5 left-1/2 -translate-x-1/2 text-slate-600 text-xs">▲</span>
-          <span class="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-slate-600 text-xs">▼</span>
-          <div id="stickKnob" class="absolute w-12 h-12 rounded-full" style="left:50%;top:50%;margin:-24px 0 0 -24px;background:radial-gradient(circle at 35% 30%,#fca5a5,#dc2626 45%,#7f1d1d);box-shadow:0 6px 10px rgba(0,0,0,.7),inset 0 -4px 6px rgba(0,0,0,.35)"></div>
-        </div>
-        <div class="flex flex-col items-center gap-2">
-          <button id="abortFightBtn" type="button" class="hidden px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-900 text-slate-300 text-[11px] font-bold border border-slate-700 cursor-pointer">↩ 대기실(샌드백)</button>
-          <div class="text-[10px] text-slate-500 text-center leading-tight">조이스틱 <b class="text-emerald-400">뒤로 = 자동 가드</b></div>
-          <div id="skillStatus" class="text-[11px] text-slate-200 text-center leading-tight font-bold"></div>
-        </div>
-        <div class="grid grid-cols-2 gap-x-3 gap-y-2.5 shrink-0" style="transform:rotate(-6deg)">
-          <button id="btn1" type="button" class="gp-btn w-[60px] h-[60px] rounded-full text-white font-black flex flex-col items-center justify-center cursor-pointer" style="background:radial-gradient(circle at 35% 28%,#7dd3fc,#2563eb 60%,#1e3a8a)"><span class="text-lg leading-none">1</span><span class="text-[10px]">약손</span></button>
-          <button id="btn2" type="button" class="gp-btn w-[60px] h-[60px] rounded-full text-white font-black flex flex-col items-center justify-center cursor-pointer" style="background:radial-gradient(circle at 35% 28%,#a5b4fc,#4f46e5 60%,#312e81)"><span class="text-lg leading-none">2</span><span class="text-[10px]">강손</span></button>
-          <button id="btn3" type="button" class="gp-btn w-[60px] h-[60px] rounded-full text-white font-black flex flex-col items-center justify-center cursor-pointer" style="background:radial-gradient(circle at 35% 28%,#fdba74,#ea580c 60%,#7c2d12)"><span class="text-lg leading-none">3</span><span class="text-[10px]">약발</span></button>
-          <button id="btn4" type="button" class="gp-btn w-[60px] h-[60px] rounded-full text-white font-black flex flex-col items-center justify-center cursor-pointer" style="background:radial-gradient(circle at 35% 28%,#fca5a5,#dc2626 60%,#7f1d1d)"><span class="text-lg leading-none">4</span><span class="text-[10px]">강발</span></button>
-        </div>
-      </div>
-      <div class="text-center text-[11px] text-slate-400">
-        키보드: 방향키 이동·점프·앉기 (<b class="text-emerald-300">뒤로 = 자동 가드</b>) · <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-sky-300">1/Z</kbd> 약손 · <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-indigo-300">2/X</kbd> 강손 · <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-orange-300">3/C</kbd> 약발 · <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-rose-300">4/V</kbd> 강발 · <b class="text-amber-300">뒤(←) · 밑(↓) · 앞(→) + 강손 또는 강발 = 스킬 발동</b> (가드 가능 · 직격 시 다운!)
       </div>
     </section>
 
@@ -374,7 +405,7 @@
   <script>
     (() => {
       // ==========================================
-      // 1. 6종 파이터 정의 (모든 스킬 가드 가능, 딜레이 없음)
+      // 1. 6종 파이터 정의
       // ==========================================
       const FIGHTERS = {
         akira: {
@@ -667,7 +698,7 @@
               state.p2Id = FIGHTERS[data.rightPlayer.skinId] ? data.rightPlayer.skinId : 'pai';
               document.getElementById('pvpLobbySection').classList.add('hidden');
               document.getElementById('pvpLobbySection').classList.remove('flex');
-              document.getElementById('gameAreaSection').classList.remove('hidden');
+              document.getElementById('fullscreenStage').classList.remove('hidden');
               startFight('pvp');
             });
             socket.on('update_game_state', (data) => {
@@ -821,7 +852,6 @@
           document.getElementById('hudTimerLabel').textContent = `STAGE ${arcadeStage}`;
         }
 
-        document.getElementById('recordBadge').textContent = `${state.wins}승 ${state.losses}패`;
         renderFacePortraits();
       }
 
@@ -836,11 +866,11 @@
       const SANDBAG_HOME_X = 590;
 
       const STAGE_THEMES = {
-        1: { skyTop:'#0f172a', skyMid:'#1e3a8a', skyBot:'#f97316', deckTop:'#475569', deckMid:'#334155', deckBot:'#0f172a', border:'#fbbf24' }, // 노을 도시
-        2: { skyTop:'#020617', skyMid:'#311042', skyBot:'#9333ea', deckTop:'#3b0764', deckMid:'#1e1b4b', deckBot:'#090d16', border:'#38bdf8' }, // 밤의 네온 도장
-        3: { skyTop:'#0c4a6e', skyMid:'#38bdf8', skyBot:'#e0f2fe', deckTop:'#cbd5e1', deckMid:'#94a3b8', deckBot:'#334155', border:'#38bdf8' }, // 설원 설산
-        4: { skyTop:'#1c0a00', skyMid:'#7f1d1d', skyBot:'#ea580c', deckTop:'#57534e', deckMid:'#292524', deckBot:'#0c0a09', border:'#ef4444' }, // 용암 격투장
-        5: { skyTop:'#1e1b4b', skyMid:'#78350f', skyBot:'#facc15', deckTop:'#ca8a04', deckMid:'#713f12', deckBot:'#1c1917', border:'#fef08a' }  // 황금 챔피언 아레나
+        1: { skyTop:'#0f172a', skyMid:'#1e3a8a', skyBot:'#f97316', deckTop:'#475569', deckMid:'#334155', deckBot:'#0f172a', border:'#fbbf24' },
+        2: { skyTop:'#020617', skyMid:'#311042', skyBot:'#9333ea', deckTop:'#3b0764', deckMid:'#1e1b4b', deckBot:'#090d16', border:'#38bdf8' },
+        3: { skyTop:'#0c4a6e', skyMid:'#38bdf8', skyBot:'#e0f2fe', deckTop:'#cbd5e1', deckMid:'#94a3b8', deckBot:'#334155', border:'#38bdf8' },
+        4: { skyTop:'#1c0a00', skyMid:'#7f1d1d', skyBot:'#ea580c', deckTop:'#57534e', deckMid:'#292524', deckBot:'#0c0a09', border:'#ef4444' },
+        5: { skyTop:'#1e1b4b', skyMid:'#78350f', skyBot:'#facc15', deckTop:'#ca8a04', deckMid:'#713f12', deckBot:'#1c1917', border:'#fef08a' }
       };
 
       const canvas = document.getElementById('gameCanvas');
@@ -858,6 +888,27 @@
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       }
       window.addEventListener('resize', resizeCanvas);
+
+      const fullscreenStage = document.getElementById('fullscreenStage');
+      const fullscreenBtn = document.getElementById('fullscreenBtn');
+      fullscreenBtn.addEventListener('click', async () => {
+        try {
+          if (!document.fullscreenElement) {
+            await fullscreenStage.requestFullscreen();
+            fullscreenBtn.textContent = '✕ 축소';
+          } else {
+            await document.exitFullscreen();
+            fullscreenBtn.textContent = '⛶ 전체화면';
+          }
+        } catch (e) {
+          showToast('이 브라우저에서는 전체화면을 지원하지 않습니다.');
+        }
+        setTimeout(resizeCanvas, 80);
+      });
+      document.addEventListener('fullscreenchange', () => {
+        fullscreenBtn.textContent = document.fullscreenElement ? '✕ 축소' : '⛶ 전체화면';
+        setTimeout(resizeCanvas, 80);
+      });
 
       let phase = 'select';
       let roundTimer = 60;
@@ -1192,7 +1243,6 @@
         ctx.ellipse(0, FLOOR_Y - f.y + 4, 44 * ss, 10 * ss, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // 가드 중일 때 방어 실드 글로우 표시
         if (gd) {
           ctx.save();
           ctx.strokeStyle = 'rgba(56, 189, 248, 0.7)';
@@ -1415,7 +1465,7 @@
       }
 
       // ==========================================
-      // 7. 전투 판정 (모든 스킬 가드 가능, 기상 무적, 콤보 & 히트스톱)
+      // 7. 전투 판정
       // ==========================================
       let p1CalloutTimer = null;
       let p2CalloutTimer = null;
@@ -1511,7 +1561,6 @@
       }
 
       function checkMeleeHit(attacker, defender) {
-        // 다운, 기상(무적), KO 중에는 중복 피격 방지
         if (attacker.hitApplied || defender.action === 'down' || defender.action === 'wake' || defender.action === 'ko') return;
         const S = attacker.strong;
         const K = attacker.action === 'skill' ? attacker.sk : null;
@@ -1526,7 +1575,6 @@
         const push = K ? 58 : P ? (S ? 30 : 16) : (S ? 62 : 30);
         let dmg = base * attacker.power * (state.isVip && attacker === f1 ? 1.15 : 1);
 
-        // 대기실 나무 샌드백 피격 처리
         if (defender.isSandbag) {
           defender.wobble = K ? 1.4 : (S ? 1.0 : 0.6);
           registerCombo(attacker);
@@ -1553,7 +1601,6 @@
           return;
         }
 
-        // 모든 공격과 스킬은 가드 가능!
         if (defender.guarding) {
           dmg *= K ? 0.22 : 0.15;
           defender.vx = attacker.dir * push * 2.5;
@@ -1785,30 +1832,25 @@
         }
       }
 
-      // 개선된 AI: 플레이어 공격/스킬 발동 즉시 반응하여 적절히 가드 + 막아낸 직후 반격
       function updateAi(dt) {
         if (phase !== 'fight' || f2.isSandbag || f2.action === 'ko' || f2.action === 'down' || f2.action === 'wake') return;
-        const lv = Math.max(1, arcadeStage); // 1 ~ 5
+        const lv = Math.max(1, arcadeStage);
         const a = f2.ai || (f2.ai = { cd: 1.1, gt: 0, seen: 0, hold: 0, punishReady: false });
         const dist = Math.abs(f1.x - f2.x);
         a.cd -= dt; a.gt -= dt; a.hold -= dt;
 
-        // 1. 플레이어가 새로운 공격/스킬을 시작하면 즉각 가드 판단
         if (f1.atkId !== a.seen && f1.action !== 'idle') {
           a.seen = f1.atkId;
           const isSkillAtk = (f1.action === 'skill');
-          // STAGE 1: 기본 38% (스킬 50%) ~ STAGE 5: 기본 66% (스킬 78%)
           const guardProb = Math.min(0.80, (isSkillAtk ? 0.42 : 0.30) + lv * 0.075);
           if (dist < 165 && Math.random() < guardProb) {
             a.gt = isSkillAtk ? 0.55 : 0.38;
-            a.punishReady = true; // 가드 성공 후 반격 플래그
+            a.punishReady = true;
           }
         }
 
-        // 공격 중이 아닐 때 가드 상태 유지
         f2.guarding = (a.gt > 0 && f2.action === 'idle');
 
-        // 2. 가드가 끝난 직후 반격 찬스 실행
         if (!f2.guarding && a.punishReady && f2.action === 'idle' && dist < 120) {
           a.punishReady = false;
           if (Math.random() < 0.35 + lv * 0.08) {
@@ -1831,7 +1873,6 @@
         }
         if (Math.random() < dt * 0.5) a.hold = Math.max(0.1, 0.32 - lv * 0.04);
 
-        // 3. 일반 공격 및 스킬 사용
         if (f2.action === 'idle' && !f2.guarding && a.cd <= 0 && dist < 112) {
           const r = Math.random();
           triggerFighterAction(f2, f1, r < 0.5 ? 'punch' : 'kick', Math.random() < (0.32 + lv * 0.08));
@@ -1850,7 +1891,6 @@
         animTime += dt;
         if (screenShake > 0) screenShake = Math.max(0, screenShake - dt * 28);
 
-        // 히트스톱(역경직) 처리: 강타/스킬 적중 순간 타격감을 극대화
         if (hitstopTimer > 0) {
           hitstopTimer = Math.max(0, hitstopTimer - dt);
         } else {
@@ -1862,8 +1902,12 @@
               }
             }
 
-            const h = (keys['ArrowRight'] ? 1 : 0) - (keys['ArrowLeft'] ? 1 : 0);
-            const down = Boolean(keys['ArrowDown']);
+            const moveRight = Boolean(keys['ArrowRight'] || keys['KeyD']);
+            const moveLeft = Boolean(keys['ArrowLeft'] || keys['KeyA']);
+            const down = Boolean(keys['ArrowDown'] || keys['KeyS']);
+            const up = Boolean(keys['ArrowUp'] || keys['KeyW']);
+
+            const h = (moveRight ? 1 : 0) - (moveLeft ? 1 : 0);
             f1.moveDir = h;
             f1.crouching = down && h === 0;
 
@@ -1880,7 +1924,7 @@
 
             f1.backGuard = f1.moveDir !== 0 && f1.moveDir === -f1.dir;
             f1.guarding = f1.backGuard && f1.action === 'idle';
-            if (keys['ArrowUp'] && f1.y >= FLOOR_Y && f1.action === 'idle') f1.vy = -520;
+            if (up && f1.y >= FLOOR_Y && f1.action === 'idle') f1.vy = -520;
 
             if (phase === 'fight' && currentMode === 'practice') updateAi(dt);
           } else {
@@ -2010,12 +2054,13 @@
       document.getElementById('abortFightBtn').addEventListener('click', returnToSelect);
 
       const ATK = {
-        KeyZ: ['punch', false], Digit1: ['punch', false], Numpad1: ['punch', false],
-        KeyX: ['punch', true],  Digit2: ['punch', true],  Numpad2: ['punch', true],
-        KeyC: ['kick', false],  Digit3: ['kick', false],  Numpad3: ['kick', false],
-        KeyV: ['kick', true],   Digit4: ['kick', true],   Numpad4: ['kick', true]
+        KeyU: ['punch', false], KeyZ: ['punch', false], Digit1: ['punch', false], Numpad1: ['punch', false],
+        KeyI: ['punch', true],  KeyX: ['punch', true],  Digit2: ['punch', true],  Numpad2: ['punch', true],
+        KeyJ: ['kick', false],  KeyC: ['kick', false],  Digit3: ['kick', false],  Numpad3: ['kick', false],
+        KeyK: ['kick', true],   KeyV: ['kick', true],   Digit4: ['kick', true],   Numpad4: ['kick', true]
       };
       window.addEventListener('keydown', (e) => {
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
         keys[e.code] = true;
         if (!canControlPlayer()) return;
         if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) e.preventDefault();
@@ -2023,6 +2068,7 @@
         if (a && !e.repeat) triggerFighterAction(f1, f2, a[0], a[1]);
       });
       window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+      window.addEventListener('blur', () => { keys = {}; });
 
       [['btn1', 'punch', false], ['btn2', 'punch', true], ['btn3', 'kick', false], ['btn4', 'kick', true]].forEach(([id, act, st]) => {
         document.getElementById(id).addEventListener('pointerdown', (e) => {
@@ -2059,7 +2105,7 @@
         document.getElementById('modePvPTab').className = 'px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300 cursor-pointer';
         document.getElementById('pvpLobbySection').classList.add('hidden');
         document.getElementById('pvpLobbySection').classList.remove('flex');
-        document.getElementById('gameAreaSection').classList.remove('hidden');
+        document.getElementById('fullscreenStage').classList.remove('hidden');
         document.getElementById('startFightBtn').textContent = '🥊 STAGE 1 도전 시작!';
         document.getElementById('selectGuideText').innerHTML = '1P 파이터를 고른 뒤 <b>나무 샌드백</b>으로 스킬을 연습하고, [STAGE 1 도전 시작]을 누르면 나머지 파이터들과 랜덤 연전을 펼칩니다!';
         returnToSelect();
@@ -2068,7 +2114,7 @@
         currentMode = 'pvp';
         document.getElementById('modePvPTab').className = 'px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-blue-600 text-white shadow cursor-pointer';
         document.getElementById('modePracticeTab').className = 'px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-slate-800 text-slate-300 cursor-pointer';
-        document.getElementById('gameAreaSection').classList.add('hidden');
+        document.getElementById('fullscreenStage').classList.add('hidden');
         document.getElementById('pvpLobbySection').classList.remove('hidden');
         document.getElementById('pvpLobbySection').classList.add('flex');
         document.getElementById('charSelectPanel').classList.remove('hidden');
